@@ -5,14 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Chat Fiction – WhatsApp Style</title>
 <meta name="theme-color" content="#075E54" />
-  
- <!-- PWA manifest + iOS support -->
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  
+<!-- PWA manifest + iOS support -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
 <style>
   :root{
     --wa-green:#075E54;      /* header */
@@ -33,7 +32,7 @@
   body{
     margin:0;background:var(--wa-bg);color:var(--wa-text);
     font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;
-    font-size:16px; /* ↑ base font */
+    font-size:16px;
     display:flex;min-height:100vh
   }
   body.noscroll{overflow:hidden}
@@ -44,7 +43,13 @@
   /* Sidebar */
   .sidebar{background:var(--wa-panel-2);border-right:1px solid var(--line)}
   .sheet{height:100%;display:flex;flex-direction:column}
-  .sidehead{background:var(--wa-green);padding:14px 12px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .sidehead{
+    background:var(--wa-green);
+    padding:14px 12px;
+    padding-top:calc(14px + constant(safe-area-inset-top));
+    padding-top:calc(14px + env(safe-area-inset-top)); /* notch-safe */
+    font-weight:700;display:flex;align-items:center;gap:8px
+  }
   .sidehead .mini-btn{background:#08493f;border:0;color:var(--wa-text);font-size:14px;padding:6px 8px;border-radius:8px}
   .folders{padding:8px;border-bottom:1px solid var(--line);display:flex;gap:8px}
   .folders select{flex:1;background:#0b141a;border:1px solid var(--line);color:var(--wa-text);border-radius:10px;padding:8px}
@@ -55,15 +60,17 @@
   .chatlist{overflow:auto;flex:1}
   .chatrow{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--line);cursor:pointer}
   .chatrow:hover{background:#0d171e}
-  .chatrow img{width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid #0006} /* ↑ */
+  .chatrow.active{background:#0f1a20;border-left:3px solid var(--wa-accent)} /* highlighted current chat */
+  .chatrow img{width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid #0006}
   .chatrow .meta{flex:1;min-width:0}
   .chatrow .title{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chatrow.active .title{font-weight:900}
   .chatrow .last{font-size:13px;color:var(--wa-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .chatrow .right{margin-left:auto;text-align:right;white-space:nowrap}
   .chatrow .right .ts{font-size:11px;color:var(--wa-muted)}
   .newchat{margin:8px;border:0;background:var(--wa-accent);color:#062a1f;font-weight:800;border-radius:10px;padding:10px 12px}
 
-  /* Mobile sidebar behavior: solid, full-bleed */
+  /* Mobile sidebar */
   @media (max-width: 860px){
     .app{grid-template-columns:1fr}
     .sidebar{display:none}
@@ -75,36 +82,54 @@
 
   /* Chat area */
   .main{display:flex;flex-direction:column;height:100vh}
-  .head{display:flex;align-items:center;gap:10px;background:var(--wa-green);padding:10px 12px;border-left:1px solid #0003}
-  .head img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid #0006} /* ↑ */
+  .head{
+    display:flex;align-items:center;gap:10px;background:var(--wa-green);
+    padding:10px 12px;border-left:1px solid #0003;
+    padding-top:calc(10px + constant(safe-area-inset-top));
+    padding-top:calc(10px + env(safe-area-inset-top)); /* notch-safe */
+  }
+  .head img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid #0006}
   .contact{display:flex;flex-direction:column;gap:2px}
   .contact .title{font-weight:900;font-size:18px;line-height:1.1}
-  .contact .sub{font-size:12px;color:#d6f5e7;opacity:.9;cursor:pointer} /* toggle online */
+  .contact .sub{font-size:12px;color:#d6f5e7;opacity:.9;cursor:pointer}
   .head .sp{flex:1}
   .head .iconbtn{background:transparent;border:0;color:#d6f5e7;font-size:18px;padding:8px 10px;border-radius:10px}
   .statusicons{display:flex;gap:8px;align-items:center;color:#ccecdf;opacity:.85}
 
   .chat{
+    position:relative;  /* for texture overlay */
     flex:1;overflow:auto;
-    background:url('data:image/svg+xml;utf8,\
-    <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">\
-    <g fill="%23131e25" opacity="0.35">\
-    <circle cx="15" cy="15" r="2"/>\
-    <circle cx="75" cy="60" r="2"/>\
-    <circle cx="220" cy="140" r="2"/>\
-    <circle cx="140" cy="260" r="2"/>\
-    </g></svg>') repeat, var(--wa-panel);
+    background:
+      url('data:image/svg+xml;utf8,\
+      <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">\
+      <g fill="%23131e25" opacity="0.35">\
+      <circle cx="15" cy="15" r="2"/>\
+      <circle cx="75" cy="60" r="2"/>\
+      <circle cx="220" cy="140" r="2"/>\
+      <circle cx="140" cy="260" r="2"/>\
+      </g></svg>') repeat,
+      var(--wa-panel);
     padding:12px; display:flex; flex-direction:column; gap:8px
   }
+  /* subtle grain overlay */
+  .chat::before{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    opacity:.06; /* adjust strength */
+    background:
+      url('data:image/svg+xml;utf8,\
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">\
+        <filter id="f"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter>\
+        <rect width="100%" height="100%" filter="url(%23f)" opacity="0.4" fill="%23000"/></svg>');
+    mix-blend-mode:overlay;
+  }
 
-  .msg{max-width:min(78%,640px); display:flex; gap:8px; align-items:flex-end}
+  .msg{max-width:min(78%,640px); display:flex; gap:10px; align-items:flex-end} /* gap ↑ */
   .msg.you{margin-left:auto; flex-direction:row-reverse}
   .bubble{
     padding:12px 14px; border-radius:16px; line-height:1.4; background:var(--bubble-in); position:relative;
-    font-size:15.5px; /* ↑ bubble font */
+    font-size:15.5px;
   }
   .you .bubble{background:var(--bubble-out)}
-  /* bubble tails */
   .msg:not(.you) .bubble::after{
     content:""; position:absolute; left:-6px; bottom:0; width:0; height:0;
     border:6px solid transparent; border-right-color:var(--bubble-in); border-left:0; border-bottom:0;
@@ -114,7 +139,7 @@
     border:6px solid transparent; border-left-color:var(--bubble-out); border-right:0; border-bottom:0;
   }
   .bubble img{max-width:100%; display:block; border-radius:10px; cursor:zoom-in}
-  .avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:1px solid #0006} /* ↑ */
+  .avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid #0006} /* bigger chat avatars */
   .ts{font-size:12px;color:var(--wa-muted);margin:0 6px}
   .metaRow{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:4px}
   .ticks{font-size:12px;line-height:1;user-select:none}
@@ -212,7 +237,10 @@
           Use <code>[image]</code> on its own line to insert an image placeholder (attaches to the last speaker).<br/>
           <em>Main character mapping:</em> any occurrence of the name you set below will be shown as <strong>You</strong> and right-aligned.
         </div>
-        <textarea id="script" placeholder="[21:42] Harry: Did you make it home?\n[21:43] Alice: Yeah, just got in.\n[21:45] Harry: [image]\n[21:45] Alice: Still on the bus…"></textarea>
+        <textarea id="script" placeholder="[21:42] Harry: Did you make it home?
+[21:43] Alice: Yeah, just got in.
+[21:45] Harry: [image]
+[21:45] Alice: Still on the bus…"></textarea>
         <div class="row">
           <input id="chatName" placeholder="Chat title (e.g., Alice)"/>
           <input id="meName" placeholder="Your display name (default: You)"/>
@@ -320,7 +348,8 @@
     f.chats
       .filter(c=>c.title.toLowerCase().includes(filter) || (c.messages.at(-1)?.text||'').toLowerCase().includes(filter))
       .forEach(c=>{
-        const row=document.createElement('div'); row.className='chatrow';
+        const row=document.createElement('div');
+        row.className='chatrow' + (c.id===currentChatId ? ' active' : '');  // highlight selected
         row.oncontextmenu=(e)=>{e.preventDefault(); const name=prompt('Rename chat', c.title); if(name!==null){c.title=name||'Untitled'; save(); renderList(filter); renderChat();}}
         row.ontouchstart=(e)=>{row.dataset.t0=Date.now()};
         row.ontouchend=(e)=>{ if(Date.now()-(+row.dataset.t0||0)>600){ if(confirm('Delete this chat?')){ const i=f.chats.findIndex(x=>x.id===c.id); f.chats.splice(i,1); save(); if(currentChatId===c.id){currentChatId=f.chats[0]?.id||null} renderList(filter); renderChat(); } } };
@@ -335,7 +364,7 @@
         ts.textContent = lastMsg ? displayTime(lastMsg.time||'') : '';
         right.append(ts);
         row.append(img,meta,right);
-        row.onclick=()=>{currentChatId=c.id; renderChat(); sidebar.classList.remove('open'); document.body.classList.remove('noscroll')};
+        row.onclick=()=>{currentChatId=c.id; renderChat(); renderList(filter); sidebar.classList.remove('open'); document.body.classList.remove('noscroll')};
         chatlist.append(row);
       });
   }
@@ -400,7 +429,7 @@
   send.onclick = ()=>{
     const c=getChat(); if(!c){alert('Create or select a chat first.'); return}
     const name=(who.value||'You').trim(); const t=text.value.trim(); if(!t){return}
-    const tm=(timeIn.value|| nowTime()); // generate 12h time when blank
+    const tm=(timeIn.value|| nowTime());
     const my=(meName.value||'You').trim();
     const msg={id:uid(),type:'text',who:name,displayWho: name===my? my : name, text:t, time:tm};
     if(name===my) { msg.side='you'; msg.status='sent'; }
@@ -550,7 +579,7 @@
   function closeLightbox(){ lightbox.classList.remove('open'); document.body.classList.remove('noscroll'); lightboxImg.src=''; }
   lightbox.addEventListener('click',(e)=>{ if(e.target===lightbox) closeLightbox(); });
 
-  /* ======= Time helpers (12h display for in-app; script times honored unless HH:MM 24h) ======= */
+  /* ======= Time helpers ======= */
   function nowTime(){
     const d=new Date();
     let h=d.getHours(), m=d.getMinutes().toString().padStart(2,'0');
@@ -560,8 +589,8 @@
   }
   function displayTime(raw){
     if(!raw) return '';
-    if(/\b(AM|PM)\b/i.test(raw)) return raw;                 // already 12h
-    const m = raw.match(/^(\d{1,2}):(\d{2})$/);              // bare 24h like 21:45
+    if(/\b(AM|PM)\b/i.test(raw)) return raw;
+    const m = raw.match(/^(\d{1,2}):(\d{2})$/);
     if(m){
       let h=parseInt(m[1],10), mm=m[2];
       if(h>=0 && h<=23){
@@ -570,7 +599,7 @@
         return `${h}:${mm} ${ampm}`;
       }
     }
-    return raw; // anything else: show as-is
+    return raw;
   }
 
   /* ======= Read receipts (demo) ======= */
@@ -596,7 +625,7 @@
 })();
 </script>
 
-    <!-- Service Worker Registration -->
+<!-- Service Worker Registration -->
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -605,6 +634,5 @@ if ("serviceWorker" in navigator) {
 }
 </script>
 
-  
 </body>
 </html>
