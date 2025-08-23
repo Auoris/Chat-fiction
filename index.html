@@ -100,6 +100,16 @@
   .head .iconbtn{background:transparent;border:0;color:#d6f5e7;font-size:18px;padding:8px 10px;border-radius:10px}
   .statusicons{display:flex;gap:8px;align-items:center;color:#ccecdf;opacity:.85}
 
+  /* Gallery strip (under header) */
+  .gallerybar{
+    display:none; /* becomes flex when there are images */
+    gap:8px; align-items:center;
+    padding:8px 10px; background:var(--wa-panel-2);
+    border-bottom:1px solid var(--line); overflow:auto;
+  }
+  .gallerybar.open{display:flex}
+  .gallerybar img{width:64px;height:64px;object-fit:cover;border-radius:10px;flex:0 0 auto;cursor:pointer;border:1px solid #0006}
+
   .chat{
     position:relative; /* for overlay */
     flex:1;overflow:auto;
@@ -228,6 +238,9 @@
         <button class="iconbtn" id="exportBtn" title="Export current chat as single-file HTML">⤴︎</button>
       </div>
 
+      <!-- Gallery strip (shows only when there are images) -->
+      <div class="gallerybar" id="galleryBar"></div>
+
       <section class="chat" id="chat"></section>
 
       <div class="toolbar">
@@ -309,8 +322,6 @@
   const memberAvatarInput = $('memberAvatarInput');
   const importPanel = $('importPanel');
   const scriptBox = $('script');
-  const parseBtn = $('parse');
-  const cancelImport = $('cancelImport');
   const chatName = $('chatName');
   const meName = $('meName');
   const mainName = $('mainName');
@@ -327,7 +338,7 @@
 
   $('newFolder').onclick=()=>{const t=prompt('New folder name','New Story'); if(t){folders.unshift({id:uid(), title:t, chats:[]}); save(); renderFolders();}};
   $('renameFolder').onclick=()=>{const f=getFolder(); if(!f) return; const t=prompt('Rename folder', f.title); if(t!==null){f.title=t||'Untitled'; save(); renderFolders();}};
-  $('deleteFolder').onclick=()=>{const f=getFolder(); if(!f) return; if(!confirm('Delete this folder and all its chats?')) return; const i=folders.findIndex(x=>x.id===f.id); folders.splice(i,1); save(); if(!folders.length){folders=[{id:uid(),title:'My Stories',chats:[]}];} currentFolderId=folders[0].id; currentChatId=folders[0].chats[0]?.id||null; renderFolders(); renderList(); renderChat();};
+  $('deleteFolder').onclick=()=>{const f=getFolder(); if(!f) return; if(!confirm('Delete this folder and all its chats?')) return; const i=folders.findIndex(x=>x.id===f.id); f.chats.splice(i,1); save(); if(!folders.length){folders=[{id:uid(),title:'My Stories',chats:[]}];} currentFolderId=folders[0].id; currentChatId=folders[0].chats[0]?.id||null; renderFolders(); renderList(); renderChat();};
 
   $('newChat').onclick=()=>addChat('New chat');
 
@@ -362,8 +373,8 @@
         const row=document.createElement('div');
         row.className='chatrow' + (c.id===currentChatId ? ' active' : '');
         row.oncontextmenu=(e)=>{e.preventDefault(); const name=prompt('Rename chat', c.title); if(name!==null){c.title=name||'Untitled'; save(); renderList(filter); renderChat();}}
-        row.ontouchstart=(e)=>{row.dataset.t0=Date.now()};
-        row.ontouchend=(e)=>{ if(Date.now()-(+row.dataset.t0||0)>600){ if(confirm('Delete this chat?')){ const i=f.chats.findIndex(x=>x.id===c.id); f.chats.splice(i,1); save(); if(currentChatId===c.id){currentChatId=f.chats[0]?.id||null} renderList(filter); renderChat(); } } };
+        row.ontouchstart=()=>{row.dataset.t0=Date.now()};
+        row.ontouchend=()=>{ if(Date.now()-(+row.dataset.t0||0)>600){ if(confirm('Delete this chat?')){ const i=f.chats.findIndex(x=>x.id===c.id); f.chats.splice(i,1); save(); if(currentChatId===c.id){currentChatId=f.chats[0]?.id||null} renderList(filter); renderChat(); } } };
         const img=document.createElement('img'); img.src=c.avatar||placeholderAvatar(c.title);
         const meta=document.createElement('div'); meta.className='meta';
         const title=document.createElement('div'); title.className='title'; title.textContent=c.title;
@@ -382,11 +393,13 @@
 
   function renderChat(){
     const c=getChat();
-    chatView.innerHTML='';
-    if(!c){ chatTitle.textContent='No chat selected'; chatAvatar.src=''; chatSubtitle.textContent='Offline'; return }
+    const galleryBar = $('galleryBar');
+    chatView.innerHTML=''; galleryBar.innerHTML='';
+    if(!c){ chatTitle.textContent='No chat selected'; chatAvatar.src=''; chatSubtitle.textContent='Offline'; galleryBar.classList.remove('open'); return }
     chatTitle.textContent=c.title; chatAvatar.src=c.avatar||placeholderAvatar(c.title);
     updatePresence(c);
     c.messages.forEach(m=>chatView.append(renderMsg(m, c)));
+    renderGallery();          // build gallery from images in this chat
     maybeRenderTyping();
     chatView.scrollTop = chatView.scrollHeight;
   }
@@ -431,6 +444,20 @@
     return row;
   }
 
+  function renderGallery(){
+    const c=getChat(); const galleryBar = $('galleryBar');
+    galleryBar.innerHTML='';
+    if(!c){ galleryBar.classList.remove('open'); return; }
+    const images = c.messages.filter(m=>m.type==='image' && m.src);
+    if(!images.length){ galleryBar.classList.remove('open'); return; }
+    images.forEach(m=>{
+      const thumb=document.createElement('img'); thumb.src=m.src; thumb.alt=m.alt||'';
+      thumb.onclick=()=>openLightbox(m.src, m.caption||'');
+      galleryBar.append(thumb);
+    });
+    galleryBar.classList.add('open');
+  }
+
   function placeholderAvatar(seed){
     const ch=(seed||'?').charCodeAt(0)%360; const color=`hsl(${ch} 60% 40%)`;
     return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='100%' height='100%' rx='12' ry='12' fill='${encodeURIComponent(color)}'/><text x='50%' y='58%' font-family='Arial' font-size='36' text-anchor='middle' fill='white'>${encodeURIComponent((seed||'?')[0]||'?')}</text></svg>`
@@ -461,6 +488,7 @@
     if(name===my) { msg.side='you'; msg.status='sent'; }
     c.messages.push(msg); save();
     chatView.append(renderMsg(msg,c));
+    renderGallery();                // update gallery strip immediately
     chatView.scrollTop=chatView.scrollHeight; e.target.value=''; timeIn.value='';
     if(msg.side==='you') simulateStatus(c, msg.id);
   }
@@ -600,8 +628,8 @@
   }
   function displayTime(raw){
     if(!raw) return '';
-    if(/\b(AM|PM)\b/i.test(raw)) return raw;
-    const m = raw.match(/^(\d{1,2}):(\d{2})$/);
+    if(/\b(AM|PM)\b/i.test(raw)) return raw;                 // already 12h
+    const m = raw.match(/^(\d{1,2}):(\d{2})$/);              // bare 24h like 21:45
     if(m){
       let h=parseInt(m[1],10), mm=m[2];
       if(h>=0 && h<=23){
@@ -610,7 +638,7 @@
         return `${h}:${mm} ${ampm}`;
       }
     }
-    return raw;
+    return raw; // anything else: show as-is
   }
 
   /* ======= Read receipts (demo) ======= */
