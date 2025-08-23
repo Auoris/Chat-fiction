@@ -13,7 +13,7 @@
     --wa-panel:#111b21;      /* panels */
     --wa-panel-2:#0a1014;    /* secondary */
     --wa-text:#e9edef;       /* text */
-    --wa-muted:#8696a0;      /* muted */
+    --wa-muted:#a7b3bb;      /* muted (slightly brighter) */
     --bubble-in:#202c33;     /* incoming */
     --bubble-out:#005c4b;    /* outgoing */
     --line:#1f2c33;          /* borders */
@@ -22,11 +22,16 @@
   }
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{margin:0;background:var(--wa-bg);color:var(--wa-text);font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;display:flex;min-height:100vh}
+  body{
+    margin:0;background:var(--wa-bg);color:var(--wa-text);
+    font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;
+    font-size:16px; /* ↑ base font */
+    display:flex;min-height:100vh
+  }
   body.noscroll{overflow:hidden}
 
   /* Layout */
-  .app{display:grid;grid-template-columns:310px 1fr;gap:0;flex:1;max-width:1400px;margin:0 auto;width:100%}
+  .app{display:grid;grid-template-columns:320px 1fr;gap:0;flex:1;max-width:1400px;margin:0 auto;width:100%}
 
   /* Sidebar */
   .sidebar{background:var(--wa-panel-2);border-right:1px solid var(--line)}
@@ -40,12 +45,12 @@
   .search{padding:8px}
   .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0b141a;color:var(--wa-text)}
   .chatlist{overflow:auto;flex:1}
-  .chatrow{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+  .chatrow{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--line);cursor:pointer}
   .chatrow:hover{background:#0d171e}
-  .chatrow img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid #0006}
+  .chatrow img{width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid #0006} /* ↑ */
   .chatrow .meta{flex:1;min-width:0}
-  .chatrow .title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .chatrow .last{font-size:12px;color:var(--wa-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chatrow .title{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chatrow .last{font-size:13px;color:var(--wa-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .chatrow .right{margin-left:auto;text-align:right;white-space:nowrap}
   .chatrow .right .ts{font-size:11px;color:var(--wa-muted)}
   .newchat{margin:8px;border:0;background:var(--wa-accent);color:#062a1f;font-weight:800;border-radius:10px;padding:10px 12px}
@@ -55,8 +60,7 @@
     .app{grid-template-columns:1fr}
     .sidebar{display:none}
     .sidebar.open{
-      display:block;position:fixed;z-index:30;inset:0;
-      background:var(--wa-panel-2); /* SOLID, not translucent */
+      display:block;position:fixed;z-index:30;inset:0;background:var(--wa-panel-2);
     }
     .sidebar.open .sheet{max-width:100%;height:100%}
   }
@@ -64,13 +68,17 @@
   /* Chat area */
   .main{display:flex;flex-direction:column;height:100vh}
   .head{display:flex;align-items:center;gap:10px;background:var(--wa-green);padding:10px 12px;border-left:1px solid #0003}
-  .head img{width:36px;height:36px;border-radius:50%;object-fit:cover;border:1px solid #0006}
-  .head .title{font-weight:800}
+  .head img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid #0006} /* ↑ */
+  .contact{display:flex;flex-direction:column;gap:2px}
+  .contact .title{font-weight:900;font-size:18px;line-height:1.1}
+  .contact .sub{font-size:12px;color:#d6f5e7;opacity:.9;cursor:pointer} /* toggle online */
   .head .sp{flex:1}
-  .head .iconbtn{background:transparent;border:0;color:#d6f5e7;font-size:16px;padding:8px 10px;border-radius:10px}
+  .head .iconbtn{background:transparent;border:0;color:#d6f5e7;font-size:18px;padding:8px 10px;border-radius:10px}
+  .statusicons{display:flex;gap:8px;align-items:center;color:#ccecdf;opacity:.85}
 
-  .chat{flex:1;overflow:auto;background:
-    url('data:image/svg+xml;utf8,\
+  .chat{
+    flex:1;overflow:auto;
+    background:url('data:image/svg+xml;utf8,\
     <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">\
     <g fill="%23131e25" opacity="0.35">\
     <circle cx="15" cy="15" r="2"/>\
@@ -78,12 +86,14 @@
     <circle cx="220" cy="140" r="2"/>\
     <circle cx="140" cy="260" r="2"/>\
     </g></svg>') repeat, var(--wa-panel);
-    padding:12px; display:flex; flex-direction:column; gap:8px}
+    padding:12px; display:flex; flex-direction:column; gap:8px
+  }
 
   .msg{max-width:min(78%,640px); display:flex; gap:8px; align-items:flex-end}
   .msg.you{margin-left:auto; flex-direction:row-reverse}
   .bubble{
-    padding:10px 12px; border-radius:14px; line-height:1.35; background:var(--bubble-in); position:relative
+    padding:12px 14px; border-radius:16px; line-height:1.4; background:var(--bubble-in); position:relative;
+    font-size:15.5px; /* ↑ bubble font */
   }
   .you .bubble{background:var(--bubble-out)}
   /* bubble tails */
@@ -96,8 +106,8 @@
     border:6px solid transparent; border-left-color:var(--bubble-out); border-right:0; border-bottom:0;
   }
   .bubble img{max-width:100%; display:block; border-radius:10px; cursor:zoom-in}
-  .avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid #0006}
-  .ts{font-size:11px;color:var(--wa-muted);margin:0 6px}
+  .avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:1px solid #0006} /* ↑ */
+  .ts{font-size:12px;color:var(--wa-muted);margin:0 6px}
   .metaRow{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:4px}
   .ticks{font-size:12px;line-height:1;user-select:none}
   .ticks[data-status="sent"]::before{content:"✓";opacity:0.8}
@@ -114,7 +124,7 @@
   .panel.open{display:block}
   .panel textarea{width:100%;height:180px;background:#0b141a;color:var(--wa-text);border:1px solid var(--line);border-radius:10px;padding:10px;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
   .panel .row{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
-  .panel input[type=text], .panel input[type=url]{background:#0b141a;color:var(--wa-text);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .panel input[type=text]{background:#0b141a;color:var(--wa-text);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
   .panel .small{font-size:12px;color:var(--wa-muted)}
 
   .hint{font-size:12px;color:var(--wa-muted);padding:10px}
@@ -161,10 +171,16 @@
     <!-- Main Chat Area -->
     <main class="main">
       <div class="head">
-        <button class="iconbtn" id="openSidebar">☰</button>
+        <button class="iconbtn" id="openSidebar" title="Chat list">☰</button>
         <img id="chatAvatar" src="" alt="avatar"/>
-        <div class="title" id="chatTitle">No chat selected</div>
+        <div class="contact">
+          <div class="title" id="chatTitle">No chat selected</div>
+          <div class="sub" id="chatSubtitle" title="Click to toggle Online/Offline">Offline</div>
+        </div>
         <div class="sp"></div>
+        <div class="statusicons" aria-hidden="true"><span>📶</span></div>
+        <button class="iconbtn" id="callBtn" title="Voice call">📞</button>
+        <button class="iconbtn" id="videoBtn" title="Video call">🎥</button>
         <button class="iconbtn" id="exportBtn" title="Export current chat as single-file HTML">⤴︎</button>
       </div>
 
@@ -172,11 +188,12 @@
 
       <div class="toolbar">
         <input id="who" placeholder="Name (e.g., You)" style="max-width:160px"/>
-        <input id="time" placeholder="HH:MM" style="max-width:100px" title="Leave blank to use current time (12-hour)"/>
+        <input id="time" placeholder="HH:MM" style="max-width:110px" title="Leave blank to use current time (12-hour)"/>
         <input id="text" class="fill" placeholder="Type a message…"/>
         <label>📷 Image<input type="file" id="imageInput" accept="image/*" /></label>
         <button id="send">Send</button>
-        <label>Set avatar<input type="file" id="avatarInput" accept="image/*" /></label>
+        <label>My avatar<input type="file" id="avatarInput" accept="image/*" /></label>
+        <label>Member avatar<input type="file" id="memberAvatarInput" accept="image/*" /></label>
         <button id="typingBtn" title="Toggle typing indicator">⋯ Typing</button>
       </div>
 
@@ -192,10 +209,11 @@
           <input id="chatName" placeholder="Chat title (e.g., Alice)"/>
           <input id="meName" placeholder="Your display name (default: You)"/>
           <input id="mainName" placeholder="Main character in script (e.g., Harry)"/>
+          <label style="align-items:center;display:flex;gap:6px"><input type="checkbox" id="appendImport" checked/> Append to current chat</label>
           <button id="parse">Import</button>
           <button id="cancelImport">Close</button>
         </div>
-        <div class="small">Tip: After importing, attach images for any <code>[image]</code> placeholders with the 📷 button (they go to the last speaker).</div>
+        <div class="small">When “Append to current chat” is checked, the script’s messages will be added to the chat you have open. Otherwise, a new chat is created.</div>
       </div>
     </main>
   </div>
@@ -233,6 +251,7 @@
   const chatlist = $('chatlist');
   const chatView = $('chat');
   const chatTitle = $('chatTitle');
+  const chatSubtitle = $('chatSubtitle');
   const chatAvatar = $('chatAvatar');
   const who = $('who');
   const text = $('text');
@@ -240,6 +259,7 @@
   const send = $('send');
   const imgInput = $('imageInput');
   const avatarInput = $('avatarInput');
+  const memberAvatarInput = $('memberAvatarInput');
   const importPanel = $('importPanel');
   const scriptBox = $('script');
   const parseBtn = $('parse');
@@ -247,6 +267,7 @@
   const chatName = $('chatName');
   const meName = $('meName');
   const mainName = $('mainName');
+  const appendImport = $('appendImport');
   const typingBtn = $('typingBtn');
 
   const sidebar = document.getElementById('sidebar');
@@ -263,12 +284,17 @@
 
   $('newChat').onclick=()=>addChat('New chat');
 
+  chatSubtitle.onclick=()=>{ // toggle Online/Offline per chat
+    const c=getChat(); if(!c) return;
+    c.online = !c.online; save(); updatePresence(c);
+  };
+
   function getFolder(){return folders.find(f=>f.id===currentFolderId)}
   function getChat(){const f=getFolder(); return f? f.chats.find(c=>c.id===currentChatId) : null}
 
   function addChat(title){
     const f=getFolder(); if(!f) return;
-    const id=uid(); const c={id,title,avatar:'',participants:{},messages:[]};
+    const id=uid(); const c={id,title,avatar:'',participants:{},online:true,messages:[]};
     f.chats.unshift(c); currentChatId=id; save(); renderList(); renderChat();
   }
 
@@ -309,19 +335,34 @@
   function renderChat(){
     const c=getChat();
     chatView.innerHTML='';
-    if(!c){ chatTitle.textContent='No chat selected'; chatAvatar.src=''; return }
+    if(!c){ chatTitle.textContent='No chat selected'; chatAvatar.src=''; chatSubtitle.textContent='Offline'; return }
     chatTitle.textContent=c.title; chatAvatar.src=c.avatar||placeholderAvatar(c.title);
+    updatePresence(c);
     c.messages.forEach(m=>chatView.append(renderMsg(m, c)));
     maybeRenderTyping();
     chatView.scrollTop = chatView.scrollHeight;
   }
 
+  function updatePresence(c){
+    if(!c){chatSubtitle.textContent='Offline'; return}
+    chatSubtitle.textContent = c.online ? 'Online' : 'Offline';
+    chatSubtitle.style.opacity = c.online ? '0.95' : '0.6';
+  }
+
+  function resolveAvatar(chat, name, isYou){
+    if(isYou){ return chat.avatar||placeholderAvatar(chat.title); }
+    return (chat.participants?.[name]?.avatar) || placeholderAvatar(name);
+  }
+
   function renderMsg(m, chat){
     const my = (meName.value||'You').trim();
-    const row=document.createElement('div'); row.className='msg'+((m.displayWho||m.who)===my || m.side==='you'?' you':'');
-    const av=document.createElement('img'); av.className='avatar';
     const whoName=(m.displayWho||m.who);
-    av.src = whoName===my ? (chat.avatar||placeholderAvatar(chat.title)) : (m.avatar||placeholderAvatar(whoName));
+    const isYou = (whoName===my) || m.side==='you';
+
+    const row=document.createElement('div'); row.className='msg'+(isYou?' you':'');
+    const av=document.createElement('img'); av.className='avatar';
+    av.src = resolveAvatar(chat, whoName, isYou);
+
     const bubble=document.createElement('div'); bubble.className='bubble';
     if(m.type==='image'){
       const im=document.createElement('img'); im.src=m.src; im.alt=m.alt||''; im.onclick=()=>openLightbox(im.src, m.caption||''); bubble.append(im);
@@ -333,16 +374,12 @@
     ts.textContent = displayTime(m.time||'');
     tsWrap.append(ts);
 
-    // Read receipts (outgoing only)
-    const isYou = row.classList.contains('you');
     if(isYou){
       const ticks=document.createElement('span'); ticks.className='ticks'; ticks.dataset.status = m.status||'';
       tsWrap.append(ticks);
     }
 
-    row.append(av,bubble);
-    // WA places outgoing timestamps inside; we keep a neat row below
-    row.append(tsWrap);
+    row.append(av,bubble,tsWrap);
     return row;
   }
 
@@ -360,10 +397,9 @@
     const msg={id:uid(),type:'text',who:name,displayWho: name===my? my : name, text:t, time:tm};
     if(name===my) { msg.side='you'; msg.status='sent'; }
     c.messages.push(msg); save();
-    const node=renderMsg(msg,c); chatView.append(node);
+    chatView.append(renderMsg(msg,c));
     text.value=''; timeIn.value='';
     chatView.scrollTop=chatView.scrollHeight;
-    // Simulate delivery/read for outgoing
     if(msg.side==='you') simulateStatus(c, msg.id);
   }
 
@@ -376,7 +412,7 @@
     const msg={id:uid(),type:'image',who:name,displayWho: name===my? my : name,src:data,time:tm};
     if(name===my) { msg.side='you'; msg.status='sent'; }
     c.messages.push(msg); save();
-    const node=renderMsg(msg,c); chatView.append(node);
+    chatView.append(renderMsg(msg,c));
     chatView.scrollTop=chatView.scrollHeight; e.target.value=''; timeIn.value='';
     if(msg.side==='you') simulateStatus(c, msg.id);
   }
@@ -387,18 +423,30 @@
     c.avatar=await fileToDataURL(file); save(); renderChat(); e.target.value='';
   }
 
-  typingBtn.onclick = ()=>{
-    typingOn = !typingOn;
-    maybeRenderTyping();
+  /* Per-member avatar: applies to the name in the "Name" field */
+  memberAvatarInput.onchange = async (e)=>{
+    const file=e.target.files[0]; if(!file){return}
+    const c=getChat(); if(!c){alert('Create or select a chat first.'); e.target.value=''; return}
+    const name=(who.value||'').trim(); if(!name){alert('Set the Name field to who you want to assign an avatar to.'); e.target.value=''; return}
+    const data=await fileToDataURL(file);
+    const my=(meName.value||'You').trim();
+    if(name===my){
+      c.avatar=data;
+    }else{
+      c.participants = c.participants||{};
+      c.participants[name] = {...(c.participants[name]||{}), avatar:data};
+    }
+    save(); renderChat(); renderList(); e.target.value='';
   }
+
+  typingBtn.onclick = ()=>{ typingOn = !typingOn; maybeRenderTyping(); };
 
   function fileToDataURL(file){return new Promise(res=>{const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(file)})}
 
-  /* ======= Import panel & parser ======= */
+  /* ======= Import panel & parser (append into current chat by default) ======= */
   $('cancelImport').onclick=()=>{importPanel.classList.remove('open')}
   $('parse').onclick=()=>{
     const t=scriptBox.value.replace(/\r/g,''); if(!t.trim()){alert('Paste a script first.'); return}
-    const title=(chatName.value||'New chat').trim();
     const me=(meName.value||'You').trim();
     const main=(mainName.value||'Harry').trim();
     const lines=t.split('\n');
@@ -417,11 +465,21 @@
         const prev=msgs[msgs.length-1]; if(prev && prev.type==='text'){ prev.text += (prev.text? '\n':'') + raw }
       }
     }
-    msgs.forEach(m=>{ if((m.displayWho||m.who)===me) { m.side='you'; }});
-    const id=uid();
-    const chat={id,title,avatar:'',participants:{},messages:msgs};
-    const f=getFolder(); f.chats.unshift(chat); currentChatId=id; save(); renderList(); renderChat(); importPanel.classList.remove('open');
-    alert('Imported. Attach images to any [image] rows with the 📷 button. Timestamps reflect your script.');
+    msgs.forEach(m=>{ if((m.displayWho||m.who)===me) m.side='you' });
+
+    let target = (appendImport.checked && getChat()) ? getChat() : null;
+    if(!target){
+      const title=(chatName.value||'New chat').trim();
+      const id=uid();
+      target={id,title,avatar:'',participants:{},online:true,messages:[]};
+      const f=getFolder(); f.chats.unshift(target); currentChatId=id;
+    }
+    target.participants = target.participants||{};
+    msgs.forEach(m=>{ const n=(m.displayWho||m.who); if(n!==me){ target.participants[n]=target.participants[n]||{} }});
+    target.messages.push(...msgs);
+
+    save(); renderList(); renderChat(); importPanel.classList.remove('open');
+    alert(appendImport.checked ? 'Imported into the current chat.' : 'Imported into a new chat.');
   }
 
   function mapName(name, me, main){ return name===main ? me : name }
@@ -434,7 +492,6 @@
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
     a.download = (c.title||'chat').replace(/\s+/g,'_') + '.html'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
   }
-
   function buildExportHTML(c){
     const safe = (s)=>String(s||'').replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
     const my=(meName.value||'You').trim();
@@ -465,16 +522,14 @@
   /* ======= Typing indicator ======= */
   let typingOn=false;
   function maybeRenderTyping(){
-    // Remove existing typing row
     const old=document.getElementById('typingRow');
     if(old) old.remove();
     if(!typingOn) return;
     const row=document.createElement('div'); row.id='typingRow'; row.className='typing';
-    // If "who" is You, show 'other side' typing; otherwise show that name typing
     const my=(meName.value||'You').trim();
     const currentWho=(who.value||my);
     const yourSide = (currentWho===my);
-    row.classList.toggle('you', !yourSide); // typing bubble should appear on the opposite side of "You"
+    row.classList.toggle('you', !yourSide);
     const dots=document.createElement('div'); dots.className='dots'; dots.innerHTML='<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
     row.append(dots);
     chatView.append(row);
@@ -487,24 +542,19 @@
   function closeLightbox(){ lightbox.classList.remove('open'); document.body.classList.remove('noscroll'); lightboxImg.src=''; }
   lightbox.addEventListener('click',(e)=>{ if(e.target===lightbox) closeLightbox(); });
 
-  /* ======= Time helpers (12-hour display for in-app messages) ======= */
+  /* ======= Time helpers (12h display for in-app; script times honored unless HH:MM 24h) ======= */
   function nowTime(){
     const d=new Date();
-    if(TIME_12H){
-      let h=d.getHours(), m=d.getMinutes().toString().padStart(2,'0');
-      const ampm = h>=12?'PM':'AM';
-      h = h%12 || 12;
-      return `${h}:${m} ${ampm}`;
-    }
-    return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    let h=d.getHours(), m=d.getMinutes().toString().padStart(2,'0');
+    const ampm = h>=12?'PM':'AM';
+    h = h%12 || 12;
+    return `${h}:${m} ${ampm}`;
   }
   function displayTime(raw){
-    // If raw already has AM/PM or non HH:MM format, show as-is to honor scripts.
     if(!raw) return '';
-    if(/\b(AM|PM)\b/i.test(raw)) return raw;
-    // If TIME_12H and raw looks like 24h HH:MM, render 12h; else show as-is.
-    const m = raw.match(/^(\d{1,2}):(\d{2})$/);
-    if(TIME_12H && m){
+    if(/\b(AM|PM)\b/i.test(raw)) return raw;                 // already 12h
+    const m = raw.match(/^(\d{1,2}):(\d{2})$/);              // bare 24h like 21:45
+    if(m){
       let h=parseInt(m[1],10), mm=m[2];
       if(h>=0 && h<=23){
         const ampm = h>=12?'PM':'AM';
@@ -512,20 +562,17 @@
         return `${h}:${mm} ${ampm}`;
       }
     }
-    return raw;
+    return raw; // anything else: show as-is
   }
 
-  /* ======= Read receipt simulation ======= */
+  /* ======= Read receipts (demo) ======= */
   function simulateStatus(chat, msgId){
-    // bump 'sent' -> 'delivered' -> 'read'
     setTimeout(()=>{ setStatus(chat, msgId, 'delivered'); }, 600);
     setTimeout(()=>{ setStatus(chat, msgId, 'read'); }, 1200);
   }
   function setStatus(chat, msgId, status){
     const m = chat.messages.find(x=>x.id===msgId); if(!m) return;
     m.status = status; save();
-    // Update last rendered node for this msg (simple approach: re-render entire chat)
-    // Minimal update: find the last .ticks and set data-status
     [...chatView.querySelectorAll('.ticks')].at(-1)?.setAttribute('data-status', status);
   }
 
