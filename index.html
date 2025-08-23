@@ -151,6 +151,14 @@
     border-radius:50%;object-fit:cover;border:1px solid #0006
   }
 
+  /* Date divider */
+  .divider{display:flex;justify-content:center;margin:10px 0}
+  .divider .chip{
+    font-size:12px; color:var(--wa-muted);
+    background:#0f1a20; border:1px solid var(--line);
+    padding:6px 10px; border-radius:999px;
+  }
+
   .ts{font-size:12px;color:var(--wa-muted);margin:0 6px}
   .metaRow{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:4px}
   .ticks{font-size:12px;line-height:1;user-select:none}
@@ -239,6 +247,7 @@
         <label>My avatar<input type="file" id="avatarInput" accept="image/*" /></label>
         <label>Member avatar<input type="file" id="memberAvatarInput" accept="image/*" /></label>
         <button id="typingBtn" title="Toggle typing indicator">⋯ Typing</button>
+        <button id="addDivider" title="Insert a date label">+ Date label</button>
       </div>
 
       <!-- Import/Parse Panel -->
@@ -403,6 +412,13 @@
   }
 
   function renderMsg(m, chat){
+    /* ===== Date divider ===== */
+    if(m.type==='divider'){
+      const d=document.createElement('div'); d.className='divider';
+      const chip=document.createElement('div'); chip.className='chip'; chip.textContent = m.label || '';
+      d.append(chip); return d;
+    }
+
     const my = (meName.value||'You').trim();
     const whoName=(m.displayWho||m.who);
     const isYou = (whoName===my) || m.side==='you';
@@ -489,6 +505,29 @@
 
   typingBtn.onclick = ()=>{ typingOn = !typingOn; maybeRenderTyping(); };
 
+  /* ======= Manual date divider ======= */
+  $('addDivider').onclick = ()=>{
+    const c=getChat(); if(!c){alert('Create or select a chat first.'); return}
+    const def = prettyDateLabel(new Date());
+    let label = prompt('Date label (shown centered in the chat):', def);
+    if(label===null) return;
+    label = label.trim();
+    if(!label) return;
+    const msg = {id:uid(), type:'divider', label};
+    c.messages.push(msg); save();
+    chatView.append(renderMsg(msg, c));
+    chatView.scrollTop = chatView.scrollHeight;
+  };
+
+  function prettyDateLabel(d){
+    // e.g., "Today" if today; else "Mon, Mar 4, 2025"
+    const now = new Date();
+    const isSameDay = d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth() && d.getDate()===now.getDate();
+    if(isSameDay) return 'Today';
+    const opts = {weekday:'short', month:'short', day:'numeric', year:'numeric'};
+    return d.toLocaleDateString(undefined, opts);
+  }
+
   function fileToDataURL(file){return new Promise(res=>{const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(file)})}
 
   /* ======= Import panel & parser (append into current chat by default) ======= */
@@ -544,6 +583,9 @@
     const safe = (s)=>String(s||'').replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
     const my=(meName.value||'You').trim();
     const items = c.messages.map(m=>{
+      if(m.type==='divider'){
+        return `<div class="divider"><span class="chip">${safe(m.label||'')}</span></div>`;
+      }
       const you = (m.displayWho||m.who)===my || m.side==='you';
       const ts = displayTime(m.time||'');
       if(m.type==='image'){
@@ -554,11 +596,13 @@
     }).join('');
     return `<!doctype html><html><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/>`+
     `<title>${safe(c.title||'Chat')}</title><style>
-      :root{--bubble-in:#202c33;--bubble-out:#005c4b;--wa-bg:#0b141a;--wa-panel:#111b21;--wa-text:#e9edef;--wa-muted:#8696a0;--read:#34b7f1}
+      :root{--bubble-in:#202c33;--bubble-out:#005c4b;--wa-bg:#0b141a;--wa-panel:#111b21;--wa-text:#e9edef;--wa-muted:#8696a0;--read:#34b7f1;--line:#1f2c33}
       body{margin:0;background:#111b21;color:var(--wa-text);font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}
       .wrap{max-width:760px;margin:0 auto;padding:16px;background:var(--wa-bg);min-height:100vh}
       .msg{max-width:78%;display:flex;gap:8px;margin:8px 0}.msg.you{margin-left:auto;flex-direction:row-reverse}
       .bubble{background:var(--bubble-in);border-radius:14px;padding:10px 12px;line-height:1.35}.msg.you .bubble{background:var(--bubble-out)}
+      .divider{display:flex;justify-content:center;margin:10px 0}
+      .divider .chip{font-size:12px;color:var(--wa-muted);background:#0f1a20;border:1px solid var(--line);padding:6px 10px;border-radius:999px}
       .ts{font-size:11px;color:var(--wa-muted);margin:0 6px}
       .metaRow{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:4px}
       .ticks[data-status="sent"]::before{content:"✓";opacity:.8}
