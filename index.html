@@ -17,15 +17,16 @@
     --bubble-in:#202c33;     /* incoming */
     --bubble-out:#005c4b;    /* outgoing */
     --line:#1f2c33;          /* borders */
+    --read:#34b7f1;          /* read ticks color */
     --radius:18px;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{margin:0;background:var(--wa-bg);color:var(--wa-text);font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;display:flex;min-height:100vh}
+  body.noscroll{overflow:hidden}
 
   /* Layout */
   .app{display:grid;grid-template-columns:310px 1fr;gap:0;flex:1;max-width:1400px;margin:0 auto;width:100%}
-  @media (max-width: 860px){.app{grid-template-columns:1fr}.sidebar{display:none}.sidebar.open{display:block;position:fixed;z-index:30;inset:0;background:#0008}.sidebar .sheet{max-width:88%;height:100%;}}
 
   /* Sidebar */
   .sidebar{background:var(--wa-panel-2);border-right:1px solid var(--line)}
@@ -45,7 +46,20 @@
   .chatrow .meta{flex:1;min-width:0}
   .chatrow .title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .chatrow .last{font-size:12px;color:var(--wa-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chatrow .right{margin-left:auto;text-align:right;white-space:nowrap}
+  .chatrow .right .ts{font-size:11px;color:var(--wa-muted)}
   .newchat{margin:8px;border:0;background:var(--wa-accent);color:#062a1f;font-weight:800;border-radius:10px;padding:10px 12px}
+
+  /* Mobile sidebar behavior: solid, full-bleed */
+  @media (max-width: 860px){
+    .app{grid-template-columns:1fr}
+    .sidebar{display:none}
+    .sidebar.open{
+      display:block;position:fixed;z-index:30;inset:0;
+      background:var(--wa-panel-2); /* SOLID, not translucent */
+    }
+    .sidebar.open .sheet{max-width:100%;height:100%}
+  }
 
   /* Chat area */
   .main{display:flex;flex-direction:column;height:100vh}
@@ -55,22 +69,40 @@
   .head .sp{flex:1}
   .head .iconbtn{background:transparent;border:0;color:#d6f5e7;font-size:16px;padding:8px 10px;border-radius:10px}
 
-  .chat{flex:1;overflow:auto;background:url('data:image/svg+xml;utf8,\
-  <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">\
-  <g fill="%23131e25" opacity="0.7">\
-  <circle cx="15" cy="15" r="2"/>\
-  <circle cx="75" cy="60" r="2"/>\
-  <circle cx="220" cy="140" r="2"/>\
-  <circle cx="140" cy="260" r="2"/>\
-  </g></svg>') repeat, var(--wa-panel); padding:12px; display:flex; flex-direction:column; gap:10px}
+  .chat{flex:1;overflow:auto;background:
+    url('data:image/svg+xml;utf8,\
+    <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">\
+    <g fill="%23131e25" opacity="0.35">\
+    <circle cx="15" cy="15" r="2"/>\
+    <circle cx="75" cy="60" r="2"/>\
+    <circle cx="220" cy="140" r="2"/>\
+    <circle cx="140" cy="260" r="2"/>\
+    </g></svg>') repeat, var(--wa-panel);
+    padding:12px; display:flex; flex-direction:column; gap:8px}
 
   .msg{max-width:min(78%,640px); display:flex; gap:8px; align-items:flex-end}
   .msg.you{margin-left:auto; flex-direction:row-reverse}
-  .bubble{padding:10px 12px; border-radius:14px; line-height:1.35; background:var(--bubble-in)}
+  .bubble{
+    padding:10px 12px; border-radius:14px; line-height:1.35; background:var(--bubble-in); position:relative
+  }
   .you .bubble{background:var(--bubble-out)}
-  .bubble img{max-width:100%; display:block; border-radius:10px}
+  /* bubble tails */
+  .msg:not(.you) .bubble::after{
+    content:""; position:absolute; left:-6px; bottom:0; width:0; height:0;
+    border:6px solid transparent; border-right-color:var(--bubble-in); border-left:0; border-bottom:0;
+  }
+  .msg.you .bubble::after{
+    content:""; position:absolute; right:-6px; bottom:0; width:0; height:0;
+    border:6px solid transparent; border-left-color:var(--bubble-out); border-right:0; border-bottom:0;
+  }
+  .bubble img{max-width:100%; display:block; border-radius:10px; cursor:zoom-in}
   .avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid #0006}
   .ts{font-size:11px;color:var(--wa-muted);margin:0 6px}
+  .metaRow{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:4px}
+  .ticks{font-size:12px;line-height:1;user-select:none}
+  .ticks[data-status="sent"]::before{content:"✓";opacity:0.8}
+  .ticks[data-status="delivered"]::before{content:"✓✓";opacity:0.9}
+  .ticks[data-status="read"]::before{content:"✓✓";color:var(--read)}
 
   .toolbar{display:flex;gap:8px;flex-wrap:wrap;padding:8px;background:var(--wa-panel-2);border-top:1px solid var(--line)}
   .toolbar button, .toolbar label{background:#0f1a20;color:var(--wa-text);border:1px solid var(--line);padding:10px 12px;border-radius:10px;font-weight:600}
@@ -86,12 +118,25 @@
   .panel .small{font-size:12px;color:var(--wa-muted)}
 
   .hint{font-size:12px;color:var(--wa-muted);padding:10px}
+
+  /* Lightbox */
+  .lightbox{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:40}
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:92vw;max-height:88vh;border-radius:12px}
+  .lightbox .cap{color:#eee;margin-top:8px;text-align:center}
+
+  /* Typing indicator */
+  .typing{display:flex;gap:6px;align-items:center;margin:6px 0}
+  .dots{display:inline-flex;gap:4px;padding:8px 12px;background:var(--bubble-in);border-radius:14px}
+  .dot{width:6px;height:6px;border-radius:50%;background:#cfd5d8;opacity:0.8;animation:b 1s infinite}
+  .dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+  @keyframes b{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-3px)}}
 </style>
 </head>
 <body>
   <div class="app">
     <!-- Sidebar (Folders & Chats) -->
-    <nav class="sidebar open" id="sidebar">
+    <nav class="sidebar" id="sidebar">
       <div class="sheet">
         <div class="sidehead">
           <button class="mini-btn" id="closeSidebar" aria-label="Close">✕</button>
@@ -120,18 +165,19 @@
         <img id="chatAvatar" src="" alt="avatar"/>
         <div class="title" id="chatTitle">No chat selected</div>
         <div class="sp"></div>
-        <button class="iconbtn" id="exportBtn" title="Export current chat as single‑file HTML">⤴︎</button>
+        <button class="iconbtn" id="exportBtn" title="Export current chat as single-file HTML">⤴︎</button>
       </div>
 
       <section class="chat" id="chat"></section>
 
       <div class="toolbar">
         <input id="who" placeholder="Name (e.g., You)" style="max-width:160px"/>
-        <input id="time" placeholder="HH:MM" style="max-width:100px"/>
+        <input id="time" placeholder="HH:MM" style="max-width:100px" title="Leave blank to use current time (12-hour)"/>
         <input id="text" class="fill" placeholder="Type a message…"/>
         <label>📷 Image<input type="file" id="imageInput" accept="image/*" /></label>
         <button id="send">Send</button>
         <label>Set avatar<input type="file" id="avatarInput" accept="image/*" /></label>
+        <button id="typingBtn" title="Toggle typing indicator">⋯ Typing</button>
       </div>
 
       <!-- Import/Parse Panel -->
@@ -139,7 +185,7 @@
         <div class="hint">
           Paste your script below. <strong>Format</strong>: <code>[HH:MM] Name: message</code> (timestamps will be used exactly as written).<br/>
           Use <code>[image]</code> on its own line to insert an image placeholder (attaches to the last speaker).<br/>
-          <em>Main character mapping:</em> any occurrence of the name you set below will be shown as <strong>You</strong> and right‑aligned.
+          <em>Main character mapping:</em> any occurrence of the name you set below will be shown as <strong>You</strong> and right-aligned.
         </div>
         <textarea id="script" placeholder="[21:42] Harry: Did you make it home?\n[21:43] Alice: Yeah, just got in.\n[21:45] Harry: [image]\n[21:45] Alice: Still on the bus…"></textarea>
         <div class="row">
@@ -154,8 +200,19 @@
     </main>
   </div>
 
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" aria-modal="true" role="dialog">
+    <div>
+      <img id="lightboxImg" alt=""/>
+      <div class="cap" id="lightboxCap"></div>
+    </div>
+  </div>
+
 <script>
 (function(){
+  /* ======= Config ======= */
+  const TIME_12H = true; // Use 12-hour display for messages created in-app
+
   /* ======= State & Storage (Folders -> Chats) ======= */
   const SKEY = 'cf_collections_v1';
   let folders = load();
@@ -190,10 +247,12 @@
   const chatName = $('chatName');
   const meName = $('meName');
   const mainName = $('mainName');
+  const typingBtn = $('typingBtn');
 
   const sidebar = document.getElementById('sidebar');
-  $('openSidebar').onclick=()=>{sidebar.classList.add('open')};
-  $('closeSidebar').onclick=()=>{sidebar.classList.remove('open')};
+  $('openSidebar').onclick=()=>{sidebar.classList.add('open'); document.body.classList.add('noscroll')};
+  $('closeSidebar').onclick=()=>{sidebar.classList.remove('open'); document.body.classList.remove('noscroll')};
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ sidebar.classList.remove('open'); document.body.classList.remove('noscroll'); closeLightbox(); }});
   $('search').oninput=(e)=>renderList(e.target.value.trim().toLowerCase());
   $('openImport').onclick=()=>{importPanel.classList.add('open')}
   $('exportBtn').onclick=()=>exportCurrent();
@@ -209,7 +268,7 @@
 
   function addChat(title){
     const f=getFolder(); if(!f) return;
-    const id=uid(); const c={id,title,avatar:'',messages:[]};
+    const id=uid(); const c={id,title,avatar:'',participants:{},messages:[]};
     f.chats.unshift(c); currentChatId=id; save(); renderList(); renderChat();
   }
 
@@ -224,18 +283,27 @@
   function renderList(filter=''){
     chatlist.innerHTML='';
     const f=getFolder(); if(!f) return;
-    f.chats.filter(c=>c.title.toLowerCase().includes(filter)).forEach(c=>{
-      const row=document.createElement('div'); row.className='chatrow';
-      row.oncontextmenu=(e)=>{e.preventDefault(); const name=prompt('Rename chat', c.title); if(name!==null){c.title=name||'Untitled'; save(); renderList(filter); renderChat();}}
-      row.ontouchstart=(e)=>{row.dataset.t0=Date.now()};
-      row.ontouchend=(e)=>{ if(Date.now()-(+row.dataset.t0||0)>600){ if(confirm('Delete this chat?')){ const i=f.chats.findIndex(x=>x.id===c.id); f.chats.splice(i,1); save(); if(currentChatId===c.id){currentChatId=f.chats[0]?.id||null} renderList(filter); renderChat(); } } };
-      const img=document.createElement('img'); img.src=c.avatar||placeholderAvatar(c.title);
-      const meta=document.createElement('div'); meta.className='meta';
-      const title=document.createElement('div'); title.className='title'; title.textContent=c.title;
-      const last=document.createElement('div'); last.className='last'; last.textContent=c.messages[c.messages.length-1]?.text||'';
-      meta.append(title,last); row.append(img,meta); row.onclick=()=>{currentChatId=c.id; renderChat(); sidebar.classList.remove('open')};
-      chatlist.append(row);
-    });
+    f.chats
+      .filter(c=>c.title.toLowerCase().includes(filter) || (c.messages.at(-1)?.text||'').toLowerCase().includes(filter))
+      .forEach(c=>{
+        const row=document.createElement('div'); row.className='chatrow';
+        row.oncontextmenu=(e)=>{e.preventDefault(); const name=prompt('Rename chat', c.title); if(name!==null){c.title=name||'Untitled'; save(); renderList(filter); renderChat();}}
+        row.ontouchstart=(e)=>{row.dataset.t0=Date.now()};
+        row.ontouchend=(e)=>{ if(Date.now()-(+row.dataset.t0||0)>600){ if(confirm('Delete this chat?')){ const i=f.chats.findIndex(x=>x.id===c.id); f.chats.splice(i,1); save(); if(currentChatId===c.id){currentChatId=f.chats[0]?.id||null} renderList(filter); renderChat(); } } };
+        const img=document.createElement('img'); img.src=c.avatar||placeholderAvatar(c.title);
+        const meta=document.createElement('div'); meta.className='meta';
+        const title=document.createElement('div'); title.className='title'; title.textContent=c.title;
+        const last=document.createElement('div'); last.className='last'; last.textContent=c.messages[c.messages.length-1]?.text||'';
+        meta.append(title,last);
+        const right=document.createElement('div'); right.className='right';
+        const ts=document.createElement('div'); ts.className='ts';
+        const lastMsg=c.messages[c.messages.length-1];
+        ts.textContent = lastMsg ? displayTime(lastMsg.time||'') : '';
+        right.append(ts);
+        row.append(img,meta,right);
+        row.onclick=()=>{currentChatId=c.id; renderChat(); sidebar.classList.remove('open'); document.body.classList.remove('noscroll')};
+        chatlist.append(row);
+      });
   }
 
   function renderChat(){
@@ -244,6 +312,7 @@
     if(!c){ chatTitle.textContent='No chat selected'; chatAvatar.src=''; return }
     chatTitle.textContent=c.title; chatAvatar.src=c.avatar||placeholderAvatar(c.title);
     c.messages.forEach(m=>chatView.append(renderMsg(m, c)));
+    maybeRenderTyping();
     chatView.scrollTop = chatView.scrollHeight;
   }
 
@@ -255,11 +324,26 @@
     av.src = whoName===my ? (chat.avatar||placeholderAvatar(chat.title)) : (m.avatar||placeholderAvatar(whoName));
     const bubble=document.createElement('div'); bubble.className='bubble';
     if(m.type==='image'){
-      const im=document.createElement('img'); im.src=m.src; im.alt=m.alt||''; bubble.append(im);
+      const im=document.createElement('img'); im.src=m.src; im.alt=m.alt||''; im.onclick=()=>openLightbox(im.src, m.caption||''); bubble.append(im);
       if(m.caption){ const cap=document.createElement('div'); cap.textContent=m.caption; bubble.append(cap) }
     } else { bubble.textContent=m.text||''; }
-    const ts=document.createElement('div'); ts.className='ts'; ts.textContent=m.time||'';
-    row.append(av,bubble,ts); return row;
+
+    const tsWrap=document.createElement('div'); tsWrap.className='metaRow';
+    const ts=document.createElement('span'); ts.className='ts';
+    ts.textContent = displayTime(m.time||'');
+    tsWrap.append(ts);
+
+    // Read receipts (outgoing only)
+    const isYou = row.classList.contains('you');
+    if(isYou){
+      const ticks=document.createElement('span'); ticks.className='ticks'; ticks.dataset.status = m.status||'';
+      tsWrap.append(ticks);
+    }
+
+    row.append(av,bubble);
+    // WA places outgoing timestamps inside; we keep a neat row below
+    row.append(tsWrap);
+    return row;
   }
 
   function placeholderAvatar(seed){
@@ -271,11 +355,16 @@
   send.onclick = ()=>{
     const c=getChat(); if(!c){alert('Create or select a chat first.'); return}
     const name=(who.value||'You').trim(); const t=text.value.trim(); if(!t){return}
-    const tm=(timeIn.value||new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+    const tm=(timeIn.value|| nowTime()); // generate 12h time when blank
     const my=(meName.value||'You').trim();
     const msg={id:uid(),type:'text',who:name,displayWho: name===my? my : name, text:t, time:tm};
-    if(name===my) msg.side='you';
-    c.messages.push(msg); save(); chatView.append(renderMsg(msg,c)); text.value=''; timeIn.value=''; chatView.scrollTop=chatView.scrollHeight;
+    if(name===my) { msg.side='you'; msg.status='sent'; }
+    c.messages.push(msg); save();
+    const node=renderMsg(msg,c); chatView.append(node);
+    text.value=''; timeIn.value='';
+    chatView.scrollTop=chatView.scrollHeight;
+    // Simulate delivery/read for outgoing
+    if(msg.side==='you') simulateStatus(c, msg.id);
   }
 
   imgInput.onchange = async (e)=>{
@@ -283,16 +372,24 @@
     const c=getChat(); if(!c){alert('Create or select a chat first.'); return}
     const name=(who.value||'You').trim(); const my=(meName.value||'You').trim();
     const data=await fileToDataURL(file);
-    const tm=(timeIn.value||new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+    const tm=(timeIn.value|| nowTime());
     const msg={id:uid(),type:'image',who:name,displayWho: name===my? my : name,src:data,time:tm};
-    if(name===my) msg.side='you';
-    c.messages.push(msg); save(); chatView.append(renderMsg(msg,c)); chatView.scrollTop=chatView.scrollHeight; e.target.value=''; timeIn.value='';
+    if(name===my) { msg.side='you'; msg.status='sent'; }
+    c.messages.push(msg); save();
+    const node=renderMsg(msg,c); chatView.append(node);
+    chatView.scrollTop=chatView.scrollHeight; e.target.value=''; timeIn.value='';
+    if(msg.side==='you') simulateStatus(c, msg.id);
   }
 
   avatarInput.onchange = async (e)=>{
     const file=e.target.files[0]; if(!file){return}
     const c=getChat(); if(!c){alert('Create or select a chat first.'); return}
     c.avatar=await fileToDataURL(file); save(); renderChat(); e.target.value='';
+  }
+
+  typingBtn.onclick = ()=>{
+    typingOn = !typingOn;
+    maybeRenderTyping();
   }
 
   function fileToDataURL(file){return new Promise(res=>{const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(file)})}
@@ -320,15 +417,16 @@
         const prev=msgs[msgs.length-1]; if(prev && prev.type==='text'){ prev.text += (prev.text? '\n':'') + raw }
       }
     }
-    msgs.forEach(m=>{ if((m.displayWho||m.who)===me) m.side='you' });
+    msgs.forEach(m=>{ if((m.displayWho||m.who)===me) { m.side='you'; }});
     const id=uid();
-    const chat={id,title,avatar:'',messages:msgs};
+    const chat={id,title,avatar:'',participants:{},messages:msgs};
     const f=getFolder(); f.chats.unshift(chat); currentChatId=id; save(); renderList(); renderChat(); importPanel.classList.remove('open');
     alert('Imported. Attach images to any [image] rows with the 📷 button. Timestamps reflect your script.');
   }
 
   function mapName(name, me, main){ return name===main ? me : name }
 
+  /* ======= Export ======= */
   function exportCurrent(){
     const c=getChat(); if(!c){alert('Open a chat first.'); return}
     const html = buildExportHTML(c);
@@ -342,18 +440,93 @@
     const my=(meName.value||'You').trim();
     const items = c.messages.map(m=>{
       const you = (m.displayWho||m.who)===my || m.side==='you';
+      const ts = displayTime(m.time||'');
       if(m.type==='image'){
-        return `<div class="msg${you?' you':''}"><div class="bubble"><img src="${m.src}" alt="${safe(m.alt)}"/></div><div class="ts">${safe(m.time)}</div></div>`
+        return `<div class="msg${you?' you':''}"><div class="bubble"><img src="${m.src}" alt="${safe(m.alt)}"/></div><div class="ts">${safe(ts)}</div></div>`
       }
-      return `<div class="msg${you?' you':''}"><div class="bubble">${safe(m.text)}</div><div class="ts">${safe(m.time)}</div></div>`
+      const ticks = you && m.status ? `<span class="ticks" data-status="${m.status}"></span>` : '';
+      return `<div class="msg${you?' you':''}"><div class="bubble">${safe(m.text)}</div><div class="metaRow"><span class="ts">${safe(ts)}</span>${ticks}</div></div>`
     }).join('');
     return `<!doctype html><html><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/>`+
-    `<title>${safe(c.title||'Chat')}</title><style>body{margin:0;background:#111b21;color:#e9edef;font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}`+
-    `.wrap{max-width:760px;margin:0 auto;padding:16px;background:#0b141a;min-height:100vh}`+
-    `.msg{max-width:78%;display:flex;gap:8px;margin:8px 0}.msg.you{margin-left:auto;flex-direction:row-reverse}`+
-    `.bubble{background:#202c33;border-radius:14px;padding:10px 12px;line-height:1.35}.msg.you .bubble{background:#005c4b}`+
-    `.ts{font-size:11px;color:#8696a0;margin:0 6px}`+
-    `</style></head><body><div class='wrap'><h2>${safe(c.title||'Chat')}</h2>${items}</div></body></html>`
+    `<title>${safe(c.title||'Chat')}</title><style>
+      :root{--bubble-in:#202c33;--bubble-out:#005c4b;--wa-bg:#0b141a;--wa-panel:#111b21;--wa-text:#e9edef;--wa-muted:#8696a0;--read:#34b7f1}
+      body{margin:0;background:#111b21;color:var(--wa-text);font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}
+      .wrap{max-width:760px;margin:0 auto;padding:16px;background:var(--wa-bg);min-height:100vh}
+      .msg{max-width:78%;display:flex;gap:8px;margin:8px 0}.msg.you{margin-left:auto;flex-direction:row-reverse}
+      .bubble{background:var(--bubble-in);border-radius:14px;padding:10px 12px;line-height:1.35}.msg.you .bubble{background:var(--bubble-out)}
+      .ts{font-size:11px;color:var(--wa-muted);margin:0 6px}
+      .metaRow{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:4px}
+      .ticks[data-status="sent"]::before{content:"✓";opacity:.8}
+      .ticks[data-status="delivered"]::before{content:"✓✓";opacity:.9}
+      .ticks[data-status="read"]::before{content:"✓✓";color:var(--read)}
+    </style></head><body><div class='wrap'><h2>${safe(c.title||'Chat')}</h2>${items}</div></body></html>`
+  }
+
+  /* ======= Typing indicator ======= */
+  let typingOn=false;
+  function maybeRenderTyping(){
+    // Remove existing typing row
+    const old=document.getElementById('typingRow');
+    if(old) old.remove();
+    if(!typingOn) return;
+    const row=document.createElement('div'); row.id='typingRow'; row.className='typing';
+    // If "who" is You, show 'other side' typing; otherwise show that name typing
+    const my=(meName.value||'You').trim();
+    const currentWho=(who.value||my);
+    const yourSide = (currentWho===my);
+    row.classList.toggle('you', !yourSide); // typing bubble should appear on the opposite side of "You"
+    const dots=document.createElement('div'); dots.className='dots'; dots.innerHTML='<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+    row.append(dots);
+    chatView.append(row);
+    chatView.scrollTop=chatView.scrollHeight;
+  }
+
+  /* ======= Lightbox ======= */
+  const lightbox=$('lightbox'), lightboxImg=$('lightboxImg'), lightboxCap=$('lightboxCap');
+  function openLightbox(src, cap){ lightboxImg.src=src; lightboxImg.alt=cap||''; lightboxCap.textContent=cap||''; lightbox.classList.add('open'); document.body.classList.add('noscroll'); }
+  function closeLightbox(){ lightbox.classList.remove('open'); document.body.classList.remove('noscroll'); lightboxImg.src=''; }
+  lightbox.addEventListener('click',(e)=>{ if(e.target===lightbox) closeLightbox(); });
+
+  /* ======= Time helpers (12-hour display for in-app messages) ======= */
+  function nowTime(){
+    const d=new Date();
+    if(TIME_12H){
+      let h=d.getHours(), m=d.getMinutes().toString().padStart(2,'0');
+      const ampm = h>=12?'PM':'AM';
+      h = h%12 || 12;
+      return `${h}:${m} ${ampm}`;
+    }
+    return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  }
+  function displayTime(raw){
+    // If raw already has AM/PM or non HH:MM format, show as-is to honor scripts.
+    if(!raw) return '';
+    if(/\b(AM|PM)\b/i.test(raw)) return raw;
+    // If TIME_12H and raw looks like 24h HH:MM, render 12h; else show as-is.
+    const m = raw.match(/^(\d{1,2}):(\d{2})$/);
+    if(TIME_12H && m){
+      let h=parseInt(m[1],10), mm=m[2];
+      if(h>=0 && h<=23){
+        const ampm = h>=12?'PM':'AM';
+        h = h%12 || 12;
+        return `${h}:${mm} ${ampm}`;
+      }
+    }
+    return raw;
+  }
+
+  /* ======= Read receipt simulation ======= */
+  function simulateStatus(chat, msgId){
+    // bump 'sent' -> 'delivered' -> 'read'
+    setTimeout(()=>{ setStatus(chat, msgId, 'delivered'); }, 600);
+    setTimeout(()=>{ setStatus(chat, msgId, 'read'); }, 1200);
+  }
+  function setStatus(chat, msgId, status){
+    const m = chat.messages.find(x=>x.id===msgId); if(!m) return;
+    m.status = status; save();
+    // Update last rendered node for this msg (simple approach: re-render entire chat)
+    // Minimal update: find the last .ticks and set data-status
+    [...chatView.querySelectorAll('.ticks')].at(-1)?.setAttribute('data-status', status);
   }
 
   /* ======= Init ======= */
