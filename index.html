@@ -8,7 +8,6 @@
 <style>
   :root{
     --wa-green:#075E54;      /* header */
-    --wa-green-dark:#054b43; /* header dark */
     --wa-accent:#25D366;     /* action */
     --wa-bg:#0b141a;         /* app bg */
     --wa-panel:#111b21;      /* panels */
@@ -25,14 +24,18 @@
   body{margin:0;background:var(--wa-bg);color:var(--wa-text);font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif;display:flex;min-height:100vh}
 
   /* Layout */
-  .app{display:grid;grid-template-columns:300px 1fr;gap:0;flex:1;max-width:1200px;margin:0 auto;width:100%}
+  .app{display:grid;grid-template-columns:310px 1fr;gap:0;flex:1;max-width:1400px;margin:0 auto;width:100%}
   @media (max-width: 860px){.app{grid-template-columns:1fr}.sidebar{display:none}.sidebar.open{display:block;position:fixed;z-index:30;inset:0;background:#0008}.sidebar .sheet{max-width:88%;height:100%;}}
 
   /* Sidebar */
   .sidebar{background:var(--wa-panel-2);border-right:1px solid var(--line)}
   .sheet{height:100%;display:flex;flex-direction:column}
-  .sidehead{background:var(--wa-green);padding:14px 12px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
-  .sidehead .mini-btn{background:transparent;border:0;color:var(--wa-text);font-size:14px;padding:6px 8px;border-radius:8px}
+  .sidehead{background:var(--wa-green);padding:14px 12px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .sidehead .mini-btn{background:#08493f;border:0;color:var(--wa-text);font-size:14px;padding:6px 8px;border-radius:8px}
+  .folders{padding:8px;border-bottom:1px solid var(--line);display:flex;gap:8px}
+  .folders select{flex:1;background:#0b141a;border:1px solid var(--line);color:var(--wa-text);border-radius:10px;padding:8px}
+  .folder-actions{display:flex;gap:8px;padding:8px}
+  .folder-actions button{background:#0f1a20;color:var(--wa-text);border:1px solid var(--line);padding:8px 10px;border-radius:10px;font-weight:600}
   .search{padding:8px}
   .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0b141a;color:var(--wa-text)}
   .chatlist{overflow:auto;flex:1}
@@ -77,7 +80,7 @@
 
   .panel{padding:10px;background:var(--wa-panel-2);border-top:1px solid var(--line);display:none}
   .panel.open{display:block}
-  .panel textarea{width:100%;height:160px;background:#0b141a;color:var(--wa-text);border:1px solid var(--line);border-radius:10px;padding:10px;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+  .panel textarea{width:100%;height:180px;background:#0b141a;color:var(--wa-text);border:1px solid var(--line);border-radius:10px;padding:10px;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
   .panel .row{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
   .panel input[type=text], .panel input[type=url]{background:#0b141a;color:var(--wa-text);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
   .panel .small{font-size:12px;color:var(--wa-muted)}
@@ -87,16 +90,26 @@
 </head>
 <body>
   <div class="app">
-    <!-- Sidebar (Chats) -->
+    <!-- Sidebar (Folders & Chats) -->
     <nav class="sidebar open" id="sidebar">
       <div class="sheet">
-        <div class="sidehead">Chats
+        <div class="sidehead">
           <button class="mini-btn" id="closeSidebar" aria-label="Close">✕</button>
+          <div style="flex:1;text-align:center;font-weight:800">Chats</div>
+          <button class="mini-btn" id="openImport" title="Import">⤓</button>
+        </div>
+        <div class="folders">
+          <select id="folderSelect"></select>
+        </div>
+        <div class="folder-actions">
+          <button id="newFolder">+ Folder</button>
+          <button id="renameFolder">Rename</button>
+          <button id="deleteFolder">Delete</button>
         </div>
         <div class="search"><input id="search" placeholder="Search chats…"/></div>
         <div class="chatlist" id="chatlist"></div>
         <button class="newchat" id="newChat">+ New chat</button>
-        <div class="hint">Tap a chat to open it. Long‑press a chat to rename or delete.</div>
+        <div class="hint">Hold a chat to rename or delete. Folders let you group multiple chats per story.</div>
       </div>
     </nav>
 
@@ -107,125 +120,144 @@
         <img id="chatAvatar" src="" alt="avatar"/>
         <div class="title" id="chatTitle">No chat selected</div>
         <div class="sp"></div>
-        <button class="iconbtn" id="importBtn" title="Import script">⤓</button>
-        <button class="iconbtn" id="exportBtn" title="Export single‑file HTML">⤴︎</button>
+        <button class="iconbtn" id="exportBtn" title="Export current chat as single‑file HTML">⤴︎</button>
       </div>
 
       <section class="chat" id="chat"></section>
 
       <div class="toolbar">
         <input id="who" placeholder="Name (e.g., You)" style="max-width:160px"/>
+        <input id="time" placeholder="HH:MM" style="max-width:100px"/>
         <input id="text" class="fill" placeholder="Type a message…"/>
-        <label>
-          📷 Image
-          <input type="file" id="imageInput" accept="image/*" />
-        </label>
+        <label>📷 Image<input type="file" id="imageInput" accept="image/*" /></label>
         <button id="send">Send</button>
-        <label>
-          Set avatar
-          <input type="file" id="avatarInput" accept="image/*" />
-        </label>
+        <label>Set avatar<input type="file" id="avatarInput" accept="image/*" /></label>
       </div>
 
       <!-- Import/Parse Panel -->
       <div class="panel" id="importPanel">
-        <div class="hint">Paste your script below. Format each line as <code>Name: message</code>. You can insert images with <code>[image]</code> on its own line, then attach images in order after importing.</div>
-        <textarea id="script" placeholder="Alice: Hey, did you make it home?\nBob: Yeah, just got in.\n[image]\nAlice: Still on the bus…"></textarea>
+        <div class="hint">
+          Paste your script below. <strong>Format</strong>: <code>[HH:MM] Name: message</code> (timestamps will be used exactly as written).<br/>
+          Use <code>[image]</code> on its own line to insert an image placeholder (attaches to the last speaker).<br/>
+          <em>Main character mapping:</em> any occurrence of the name you set below will be shown as <strong>You</strong> and right‑aligned.
+        </div>
+        <textarea id="script" placeholder="[21:42] Harry: Did you make it home?\n[21:43] Alice: Yeah, just got in.\n[21:45] Harry: [image]\n[21:45] Alice: Still on the bus…"></textarea>
         <div class="row">
           <input id="chatName" placeholder="Chat title (e.g., Alice)"/>
-          <input id="meName" placeholder="Your name (align right, e.g., You)"/>
+          <input id="meName" placeholder="Your display name (default: You)"/>
+          <input id="mainName" placeholder="Main character in script (e.g., Harry)"/>
           <button id="parse">Import</button>
           <button id="cancelImport">Close</button>
         </div>
-        <div class="small">Tip: After importing, tap 📷 to attach images for any <code>[image]</code> placeholders (they’ll attach to the last speaker).</div>
+        <div class="small">Tip: After importing, attach images for any <code>[image]</code> placeholders with the 📷 button (they go to the last speaker).</div>
       </div>
     </main>
   </div>
 
 <script>
 (function(){
-  /* ======= State & Storage ======= */
-  const SKEY = 'cf_chats_v1';
-  let chats = load();
-  let currentId = chats[0]?.id || null;
+  /* ======= State & Storage (Folders -> Chats) ======= */
+  const SKEY = 'cf_collections_v1';
+  let folders = load();
+  if(!folders.length){
+    folders = [{id:uid(), title:'My Stories', chats:[]}];
+    save();
+  }
+  let currentFolderId = folders[0].id;
+  let currentChatId = folders[0].chats[0]?.id || null;
 
   function uid(){return Math.random().toString(36).slice(2,10)}
   function load(){try{return JSON.parse(localStorage.getItem(SKEY)||'[]')}catch{return []}}
-  function save(){localStorage.setItem(SKEY, JSON.stringify(chats))}
+  function save(){localStorage.setItem(SKEY, JSON.stringify(folders))}
 
   /* ======= Elements ======= */
-  const el = (id)=>document.getElementById(id);
-  const chatlist = el('chatlist');
-  const chatView = el('chat');
-  const chatTitle = el('chatTitle');
-  const chatAvatar = el('chatAvatar');
-  const who = el('who');
-  const text = el('text');
-  const send = el('send');
-  const imgInput = el('imageInput');
-  const avatarInput = el('avatarInput');
-  const importBtn = el('importBtn');
-  const exportBtn = el('exportBtn');
-  const importPanel = el('importPanel');
-  const scriptBox = el('script');
-  const parseBtn = el('parse');
-  const cancelImport = el('cancelImport');
-  const chatName = el('chatName');
-  const meName = el('meName');
+  const $ = (id)=>document.getElementById(id);
+  const folderSelect = $('folderSelect');
+  const chatlist = $('chatlist');
+  const chatView = $('chat');
+  const chatTitle = $('chatTitle');
+  const chatAvatar = $('chatAvatar');
+  const who = $('who');
+  const text = $('text');
+  const timeIn = $('time');
+  const send = $('send');
+  const imgInput = $('imageInput');
+  const avatarInput = $('avatarInput');
+  const importPanel = $('importPanel');
+  const scriptBox = $('script');
+  const parseBtn = $('parse');
+  const cancelImport = $('cancelImport');
+  const chatName = $('chatName');
+  const meName = $('meName');
+  const mainName = $('mainName');
 
   const sidebar = document.getElementById('sidebar');
-  el('openSidebar').onclick=()=>{sidebar.classList.add('open')};
-  el('closeSidebar').onclick=()=>{sidebar.classList.remove('open')};
-  el('search').oninput=(e)=>renderList(e.target.value.trim().toLowerCase());
+  $('openSidebar').onclick=()=>{sidebar.classList.add('open')};
+  $('closeSidebar').onclick=()=>{sidebar.classList.remove('open')};
+  $('search').oninput=(e)=>renderList(e.target.value.trim().toLowerCase());
+  $('openImport').onclick=()=>{importPanel.classList.add('open')}
+  $('exportBtn').onclick=()=>exportCurrent();
 
-  /* ======= Chat CRUD ======= */
-  function addChat(title='New chat'){
-    const id=uid();
-    const c={id,title,avatar:'',messages:[]};
-    chats.unshift(c); currentId=id; save(); renderList(); renderChat();
-  }
-  function getCurrent(){return chats.find(c=>c.id===currentId)||null}
-  function setCurrent(id){currentId=id; renderChat(); sidebar.classList.remove('open')}
-  function delChat(id){
-    const i=chats.findIndex(c=>c.id===id); if(i>-1){chats.splice(i,1); save(); if(currentId===id){currentId=chats[0]?.id||null} renderList(); renderChat();}
+  $('newFolder').onclick=()=>{const t=prompt('New folder name','New Story'); if(t){folders.unshift({id:uid(), title:t, chats:[]}); save(); renderFolders();}};
+  $('renameFolder').onclick=()=>{const f=getFolder(); if(!f) return; const t=prompt('Rename folder', f.title); if(t!==null){f.title=t||'Untitled'; save(); renderFolders();}};
+  $('deleteFolder').onclick=()=>{const f=getFolder(); if(!f) return; if(!confirm('Delete this folder and all its chats?')) return; const i=folders.findIndex(x=>x.id===f.id); folders.splice(i,1); save(); if(!folders.length){folders=[{id:uid(),title:'My Stories',chats:[]}];} currentFolderId=folders[0].id; currentChatId=folders[0].chats[0]?.id||null; renderFolders(); renderList(); renderChat();};
+
+  $('newChat').onclick=()=>addChat('New chat');
+
+  function getFolder(){return folders.find(f=>f.id===currentFolderId)}
+  function getChat(){const f=getFolder(); return f? f.chats.find(c=>c.id===currentChatId) : null}
+
+  function addChat(title){
+    const f=getFolder(); if(!f) return;
+    const id=uid(); const c={id,title,avatar:'',messages:[]};
+    f.chats.unshift(c); currentChatId=id; save(); renderList(); renderChat();
   }
 
   /* ======= Rendering ======= */
+  function renderFolders(){
+    folderSelect.innerHTML='';
+    folders.forEach(f=>{const o=document.createElement('option'); o.value=f.id; o.textContent=f.title; folderSelect.append(o)});
+    folderSelect.value=currentFolderId;
+  }
+  folderSelect.onchange=(e)=>{currentFolderId=e.target.value; currentChatId=getFolder().chats[0]?.id||null; renderList(); renderChat();}
+
   function renderList(filter=''){
     chatlist.innerHTML='';
-    chats.filter(c=>c.title.toLowerCase().includes(filter)).forEach(c=>{
+    const f=getFolder(); if(!f) return;
+    f.chats.filter(c=>c.title.toLowerCase().includes(filter)).forEach(c=>{
       const row=document.createElement('div'); row.className='chatrow';
       row.oncontextmenu=(e)=>{e.preventDefault(); const name=prompt('Rename chat', c.title); if(name!==null){c.title=name||'Untitled'; save(); renderList(filter); renderChat();}}
-      row.ontouchstart=(e)=>{row.dataset.touchstart=Date.now()};
-      row.ontouchend=(e)=>{ if(Date.now()-(+row.dataset.touchstart||0)>600){ const act=confirm('Delete this chat?'); if(act){delChat(c.id)} } };
+      row.ontouchstart=(e)=>{row.dataset.t0=Date.now()};
+      row.ontouchend=(e)=>{ if(Date.now()-(+row.dataset.t0||0)>600){ if(confirm('Delete this chat?')){ const i=f.chats.findIndex(x=>x.id===c.id); f.chats.splice(i,1); save(); if(currentChatId===c.id){currentChatId=f.chats[0]?.id||null} renderList(filter); renderChat(); } } };
       const img=document.createElement('img'); img.src=c.avatar||placeholderAvatar(c.title);
       const meta=document.createElement('div'); meta.className='meta';
       const title=document.createElement('div'); title.className='title'; title.textContent=c.title;
       const last=document.createElement('div'); last.className='last'; last.textContent=c.messages[c.messages.length-1]?.text||'';
-      meta.append(title,last); row.append(img,meta); row.onclick=()=>setCurrent(c.id);
+      meta.append(title,last); row.append(img,meta); row.onclick=()=>{currentChatId=c.id; renderChat(); sidebar.classList.remove('open')};
       chatlist.append(row);
     });
   }
 
   function renderChat(){
-    const c=getCurrent();
+    const c=getChat();
     chatView.innerHTML='';
     if(!c){ chatTitle.textContent='No chat selected'; chatAvatar.src=''; return }
     chatTitle.textContent=c.title; chatAvatar.src=c.avatar||placeholderAvatar(c.title);
-    c.messages.forEach(m=>chatView.append(renderMsg(m)));
+    c.messages.forEach(m=>chatView.append(renderMsg(m, c)));
     chatView.scrollTop = chatView.scrollHeight;
   }
 
-  function renderMsg(m){
-    const row=document.createElement('div'); row.className='msg'+(m.who===meName.value.trim()||m.side==='you'?' you':'');
-    const av=document.createElement('img'); av.className='avatar'; av.src=(m.who===meName.value.trim()? (getCurrent().avatar||placeholderAvatar(getCurrent().title)) : (m.avatar||placeholderAvatar(m.who)));
+  function renderMsg(m, chat){
+    const my = (meName.value||'You').trim();
+    const row=document.createElement('div'); row.className='msg'+((m.displayWho||m.who)===my || m.side==='you'?' you':'');
+    const av=document.createElement('img'); av.className='avatar';
+    const whoName=(m.displayWho||m.who);
+    av.src = whoName===my ? (chat.avatar||placeholderAvatar(chat.title)) : (m.avatar||placeholderAvatar(whoName));
     const bubble=document.createElement('div'); bubble.className='bubble';
     if(m.type==='image'){
       const im=document.createElement('img'); im.src=m.src; im.alt=m.alt||''; bubble.append(im);
       if(m.caption){ const cap=document.createElement('div'); cap.textContent=m.caption; bubble.append(cap) }
-    } else {
-      bubble.textContent=m.text||'';
-    }
+    } else { bubble.textContent=m.text||''; }
     const ts=document.createElement('div'); ts.className='ts'; ts.textContent=m.time||'';
     row.append(av,bubble,ts); return row;
   }
@@ -237,96 +269,102 @@
 
   /* ======= Message actions ======= */
   send.onclick = ()=>{
-    const c=getCurrent(); if(!c){alert('Create or select a chat first.'); return}
+    const c=getChat(); if(!c){alert('Create or select a chat first.'); return}
     const name=(who.value||'You').trim(); const t=text.value.trim(); if(!t){return}
-    const msg={id:uid(),type:'text',who:name,text:t,time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})};
-    // If name matches meName, align right
-    if(name===(meName.value||'You').trim()) msg.side='you';
-    c.messages.push(msg); save(); chatView.append(renderMsg(msg)); text.value=''; chatView.scrollTop=chatView.scrollHeight;
+    const tm=(timeIn.value||new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+    const my=(meName.value||'You').trim();
+    const msg={id:uid(),type:'text',who:name,displayWho: name===my? my : name, text:t, time:tm};
+    if(name===my) msg.side='you';
+    c.messages.push(msg); save(); chatView.append(renderMsg(msg,c)); text.value=''; timeIn.value=''; chatView.scrollTop=chatView.scrollHeight;
   }
 
   imgInput.onchange = async (e)=>{
     const file=e.target.files[0]; if(!file){return}
-    const c=getCurrent(); if(!c){alert('Create or select a chat first.'); return}
-    const name=(who.value||'You').trim();
+    const c=getChat(); if(!c){alert('Create or select a chat first.'); return}
+    const name=(who.value||'You').trim(); const my=(meName.value||'You').trim();
     const data=await fileToDataURL(file);
-    const msg={id:uid(),type:'image',who:name,src:data,time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})};
-    if(name===(meName.value||'You').trim()) msg.side='you';
-    c.messages.push(msg); save(); chatView.append(renderMsg(msg)); chatView.scrollTop=chatView.scrollHeight; e.target.value='';
+    const tm=(timeIn.value||new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}));
+    const msg={id:uid(),type:'image',who:name,displayWho: name===my? my : name,src:data,time:tm};
+    if(name===my) msg.side='you';
+    c.messages.push(msg); save(); chatView.append(renderMsg(msg,c)); chatView.scrollTop=chatView.scrollHeight; e.target.value=''; timeIn.value='';
   }
 
   avatarInput.onchange = async (e)=>{
     const file=e.target.files[0]; if(!file){return}
-    const c=getCurrent(); if(!c){alert('Create or select a chat first.'); return}
+    const c=getChat(); if(!c){alert('Create or select a chat first.'); return}
     c.avatar=await fileToDataURL(file); save(); renderChat(); e.target.value='';
   }
 
   function fileToDataURL(file){return new Promise(res=>{const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(file)})}
 
   /* ======= Import panel & parser ======= */
-  importBtn.onclick=()=>{importPanel.classList.add('open')}
-  cancelImport.onclick=()=>{importPanel.classList.remove('open')}
-  parseBtn.onclick=()=>{
+  $('cancelImport').onclick=()=>{importPanel.classList.remove('open')}
+  $('parse').onclick=()=>{
     const t=scriptBox.value.replace(/\r/g,''); if(!t.trim()){alert('Paste a script first.'); return}
     const title=(chatName.value||'New chat').trim();
     const me=(meName.value||'You').trim();
-    const lines=t.split('\n').filter(Boolean);
-    const msgs=[]; let lastSpeaker=me;
-    for(const line of lines){
-      if(line.trim()==='[image]'){
-        msgs.push({id:uid(),type:'image',who:lastSpeaker,src:'',alt:'',__needsImage:true,time:''});
+    const main=(mainName.value||'Harry').trim();
+    const lines=t.split('\n');
+    const msgs=[]; let lastSpeaker=me; let lastTime='';
+    for(const raw of lines){
+      const line=raw.trim(); if(!line) continue;
+      if(line.toLowerCase()==='[image]'){
+        msgs.push({id:uid(),type:'image',who:lastSpeaker,displayWho: mapName(lastSpeaker, me, main), src:'',alt:'',__needsImage:true,time:lastTime});
         continue;
       }
-      const m=line.match(/^([^:]{1,40}):\s*(.*)$/);
+      const m=line.match(/^\[(.*?)\]\s+([^:]{1,40}):\s*(.*)$/);
       if(m){
-        const who=m[1].trim(); const msg=m[2]; lastSpeaker=who;
-        msgs.push({id:uid(),type:'text',who, text:msg, time:''});
+        const tm=m[1].trim(); const who=m[2].trim(); const msg=m[3]; lastSpeaker=who; lastTime=tm;
+        msgs.push({id:uid(),type:'text',who,displayWho: mapName(who, me, main), text:msg, time:tm});
       } else {
-        // Continuation line
-        const prev=msgs[msgs.length-1];
-        if(prev && prev.type==='text'){ prev.text += (prev.text? '\n':'') + line }
+        const prev=msgs[msgs.length-1]; if(prev && prev.type==='text'){ prev.text += (prev.text? '\n':'') + raw }
       }
     }
-    const id=uid(); const c={id,title,avatar:'',messages:msgs.map(m=>{ if(!m.time) m.time=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); if(m.who===me) m.side='you'; return m; })};
-    chats.unshift(c); currentId=id; save(); renderList(); renderChat(); importPanel.classList.remove('open');
-    alert('Imported. Add images for any [image] placeholders using the 📷 button (they attach to the last speaker you set in the Name box).');
+    msgs.forEach(m=>{ if((m.displayWho||m.who)===me) m.side='you' });
+    const id=uid();
+    const chat={id,title,avatar:'',messages:msgs};
+    const f=getFolder(); f.chats.unshift(chat); currentChatId=id; save(); renderList(); renderChat(); importPanel.classList.remove('open');
+    alert('Imported. Attach images to any [image] rows with the 📷 button. Timestamps reflect your script.');
   }
 
-  /* ======= Export ======= */
-  exportBtn.onclick=()=>{
-    const html = buildExportHTML();
+  function mapName(name, me, main){ return name===main ? me : name }
+
+  function exportCurrent(){
+    const c=getChat(); if(!c){alert('Open a chat first.'); return}
+    const html = buildExportHTML(c);
     const blob = new Blob([html], {type:'text/html'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-    const name = (getCurrent()?.title || 'chat') + '.html';
-    a.download = name.replace(/\s+/g,'_'); a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+    a.download = (c.title||'chat').replace(/\s+/g,'_') + '.html'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
   }
 
-  function buildExportHTML(){
-    // Minimal self-contained HTML export with current chat rendered (images embedded)
-    const c=getCurrent();
+  function buildExportHTML(c){
     const safe = (s)=>String(s||'').replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
-    const items = !c? '' : c.messages.map(m=>{
+    const my=(meName.value||'You').trim();
+    const items = c.messages.map(m=>{
+      const you = (m.displayWho||m.who)===my || m.side==='you';
       if(m.type==='image'){
-        return `<div class="msg${m.side==='you'?' you':''}"><img class="avatar" src="${m.who===(meName.value||'You')? (c.avatar||''): ''}"/><div class="bubble">`+
-               `<img src="${m.src}" alt="${safe(m.alt)}"/></div><div class="ts">${safe(m.time)}</div></div>`
+        return `<div class="msg${you?' you':''}"><div class="bubble"><img src="${m.src}" alt="${safe(m.alt)}"/></div><div class="ts">${safe(m.time)}</div></div>`
       }
-      return `<div class="msg${m.side==='you'?' you':''}"><div class="bubble">${safe(m.text)}</div><div class="ts">${safe(m.time)}</div></div>`
+      return `<div class="msg${you?' you':''}"><div class="bubble">${safe(m.text)}</div><div class="ts">${safe(m.time)}</div></div>`
     }).join('');
     return `<!doctype html><html><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/>`+
-    `<title>${safe(c?.title||'Chat')}</title><style>body{margin:0;background:#111b21;color:#e9edef;font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}`+
+    `<title>${safe(c.title||'Chat')}</title><style>body{margin:0;background:#111b21;color:#e9edef;font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}`+
     `.wrap{max-width:760px;margin:0 auto;padding:16px;background:#0b141a;min-height:100vh}`+
     `.msg{max-width:78%;display:flex;gap:8px;margin:8px 0}.msg.you{margin-left:auto;flex-direction:row-reverse}`+
-    `.bubble{background:#202c33;border-radius:14px;padding:10px 12px;line-height:1.35}.you .bubble{background:#005c4b}`+
-    `.ts{font-size:11px;color:#8696a0;margin:0 6px}.avatar{width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid #0006}`+
-    `</style></head><body><div class='wrap'><h2>${safe(c?.title||'Chat')}</h2>${items}</div></body></html>`
+    `.bubble{background:#202c33;border-radius:14px;padding:10px 12px;line-height:1.35}.msg.you .bubble{background:#005c4b}`+
+    `.ts{font-size:11px;color:#8696a0;margin:0 6px}`+
+    `</style></head><body><div class='wrap'><h2>${safe(c.title||'Chat')}</h2>${items}</div></body></html>`
   }
 
   /* ======= Init ======= */
-  el('newChat').onclick=()=>addChat('New chat');
-  if(!chats.length){ addChat('Demo chat'); }
-  meName.value = 'You';
-  who.value = 'You';
-  renderList(); renderChat();
+  function init(){
+    renderFolders();
+    if(!getFolder().chats.length){ addChat('Demo chat'); }
+    meName.value = 'You';
+    who.value = 'You';
+    renderList(); renderChat();
+  }
+  init();
 })();
 </script>
 </body>
