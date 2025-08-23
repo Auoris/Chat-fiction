@@ -44,11 +44,10 @@
   .sidebar{background:var(--wa-panel-2);border-right:1px solid var(--line)}
   .sheet{height:100%;display:flex;flex-direction:column}
   .sidehead{
-    background:var(--wa-green);
-    padding:14px 12px;
+    background:var(--wa-green);padding:14px 12px;font-weight:700;display:flex;align-items:center;gap:8px;
+    /* notch-safe */
     padding-top:calc(14px + constant(safe-area-inset-top));
-    padding-top:calc(14px + env(safe-area-inset-top)); /* notch-safe */
-    font-weight:700;display:flex;align-items:center;gap:8px
+    padding-top:calc(14px + env(safe-area-inset-top));
   }
   .sidehead .mini-btn{background:#08493f;border:0;color:var(--wa-text);font-size:14px;padding:6px 8px;border-radius:8px}
   .folders{padding:8px;border-bottom:1px solid var(--line);display:flex;gap:8px}
@@ -60,17 +59,22 @@
   .chatlist{overflow:auto;flex:1}
   .chatrow{display:flex;gap:10px;align-items:center;padding:12px;border-bottom:1px solid var(--line);cursor:pointer}
   .chatrow:hover{background:#0d171e}
-  .chatrow.active{background:#0f1a20;border-left:3px solid var(--wa-accent)} /* highlighted current chat */
   .chatrow img{width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid #0006}
   .chatrow .meta{flex:1;min-width:0}
   .chatrow .title{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .chatrow.active .title{font-weight:900}
   .chatrow .last{font-size:13px;color:var(--wa-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .chatrow .right{margin-left:auto;text-align:right;white-space:nowrap}
   .chatrow .right .ts{font-size:11px;color:var(--wa-muted)}
   .newchat{margin:8px;border:0;background:var(--wa-accent);color:#062a1f;font-weight:800;border-radius:10px;padding:10px 12px}
 
-  /* Mobile sidebar */
+  /* Selected chat highlight */
+  .chatrow.active{
+    background:#0f1a20;
+    border-left:3px solid var(--wa-accent);
+  }
+  .chatrow.active .title{font-weight:900}
+
+  /* Mobile sidebar behavior: solid, full-bleed */
   @media (max-width: 860px){
     .app{grid-template-columns:1fr}
     .sidebar{display:none}
@@ -83,10 +87,10 @@
   /* Chat area */
   .main{display:flex;flex-direction:column;height:100vh}
   .head{
-    display:flex;align-items:center;gap:10px;background:var(--wa-green);
-    padding:10px 12px;border-left:1px solid #0003;
+    display:flex;align-items:center;gap:10px;background:var(--wa-green);padding:10px 12px;border-left:1px solid #0003;
+    /* notch-safe */
     padding-top:calc(10px + constant(safe-area-inset-top));
-    padding-top:calc(10px + env(safe-area-inset-top)); /* notch-safe */
+    padding-top:calc(10px + env(safe-area-inset-top));
   }
   .head img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid #0006}
   .contact{display:flex;flex-direction:column;gap:2px}
@@ -97,7 +101,7 @@
   .statusicons{display:flex;gap:8px;align-items:center;color:#ccecdf;opacity:.85}
 
   .chat{
-    position:relative;  /* for texture overlay */
+    position:relative; /* for overlay */
     flex:1;overflow:auto;
     background:
       url('data:image/svg+xml;utf8,\
@@ -114,7 +118,7 @@
   /* subtle grain overlay */
   .chat::before{
     content:""; position:absolute; inset:0; pointer-events:none;
-    opacity:.06; /* adjust strength */
+    opacity:.06;
     background:
       url('data:image/svg+xml;utf8,\
       <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">\
@@ -123,13 +127,14 @@
     mix-blend-mode:overlay;
   }
 
-  .msg{max-width:min(78%,640px); display:flex; gap:10px; align-items:flex-end} /* gap ↑ */
+  .msg{max-width:min(78%,640px); display:flex; gap:10px; align-items:flex-end}
   .msg.you{margin-left:auto; flex-direction:row-reverse}
   .bubble{
     padding:12px 14px; border-radius:16px; line-height:1.4; background:var(--bubble-in); position:relative;
     font-size:15.5px;
   }
   .you .bubble{background:var(--bubble-out)}
+  /* bubble tails */
   .msg:not(.you) .bubble::after{
     content:""; position:absolute; left:-6px; bottom:0; width:0; height:0;
     border:6px solid transparent; border-right-color:var(--bubble-in); border-left:0; border-bottom:0;
@@ -139,7 +144,13 @@
     border:6px solid transparent; border-left-color:var(--bubble-out); border-right:0; border-bottom:0;
   }
   .bubble img{max-width:100%; display:block; border-radius:10px; cursor:zoom-in}
-  .avatar{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1px solid #0006} /* bigger chat avatars */
+
+  /* Bigger chat avatars */
+  .avatar{
+    width:44px; height:44px;  /* was 36x36 */
+    border-radius:50%;object-fit:cover;border:1px solid #0006
+  }
+
   .ts{font-size:12px;color:var(--wa-muted);margin:0 6px}
   .metaRow{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:4px}
   .ticks{font-size:12px;line-height:1;user-select:none}
@@ -349,7 +360,7 @@
       .filter(c=>c.title.toLowerCase().includes(filter) || (c.messages.at(-1)?.text||'').toLowerCase().includes(filter))
       .forEach(c=>{
         const row=document.createElement('div');
-        row.className='chatrow' + (c.id===currentChatId ? ' active' : '');  // highlight selected
+        row.className='chatrow' + (c.id===currentChatId ? ' active' : '');
         row.oncontextmenu=(e)=>{e.preventDefault(); const name=prompt('Rename chat', c.title); if(name!==null){c.title=name||'Untitled'; save(); renderList(filter); renderChat();}}
         row.ontouchstart=(e)=>{row.dataset.t0=Date.now()};
         row.ontouchend=(e)=>{ if(Date.now()-(+row.dataset.t0||0)>600){ if(confirm('Delete this chat?')){ const i=f.chats.findIndex(x=>x.id===c.id); f.chats.splice(i,1); save(); if(currentChatId===c.id){currentChatId=f.chats[0]?.id||null} renderList(filter); renderChat(); } } };
@@ -429,7 +440,7 @@
   send.onclick = ()=>{
     const c=getChat(); if(!c){alert('Create or select a chat first.'); return}
     const name=(who.value||'You').trim(); const t=text.value.trim(); if(!t){return}
-    const tm=(timeIn.value|| nowTime());
+    const tm=(timeIn.value|| nowTime()); // generate 12h time when blank
     const my=(meName.value||'You').trim();
     const msg={id:uid(),type:'text',who:name,displayWho: name===my? my : name, text:t, time:tm};
     if(name===my) { msg.side='you'; msg.status='sent'; }
@@ -579,7 +590,7 @@
   function closeLightbox(){ lightbox.classList.remove('open'); document.body.classList.remove('noscroll'); lightboxImg.src=''; }
   lightbox.addEventListener('click',(e)=>{ if(e.target===lightbox) closeLightbox(); });
 
-  /* ======= Time helpers ======= */
+  /* ======= Time helpers (12h display for in-app; script times honored unless HH:MM 24h) ======= */
   function nowTime(){
     const d=new Date();
     let h=d.getHours(), m=d.getMinutes().toString().padStart(2,'0');
