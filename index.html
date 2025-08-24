@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -11,6 +11,9 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- IndexedDB helper -->
+<script src="https://unpkg.com/idb-keyval@6/dist/umd.js"></script>
 
 <style>
   :root{
@@ -45,14 +48,13 @@
   .sheet{height:100%;display:flex;flex-direction:column}
   .sidehead{
     background:var(--wa-green);padding:14px 12px;font-weight:700;display:flex;align-items:center;gap:8px;
-    /* notch-safe */
     padding-top:calc(14px + constant(safe-area-inset-top));
     padding-top:calc(14px + env(safe-area-inset-top));
   }
   .sidehead .mini-btn{background:#08493f;border:0;color:var(--wa-text);font-size:14px;padding:6px 8px;border-radius:8px}
-  .folders{padding:8px;border-bottom:1px solid var(--line);display:flex;gap:8px}
-  .folders select{flex:1;background:#0b141a;border:1px solid var(--line);color:var(--wa-text);border-radius:10px;padding:8px}
-  .folder-actions{display:flex;gap:8px;padding:8px}
+  .folders{padding:8px;border-bottom:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
+  .folders select{flex:1;background:#0b141a;border:1px solid var(--line);color:var(--wa-text);border-radius:10px;padding:8px;min-width:160px}
+  .folder-actions{display:flex;gap:8px;flex-wrap:wrap;padding:8px}
   .folder-actions button{background:#0f1a20;color:var(--wa-text);border:1px solid var(--line);padding:8px 10px;border-radius:10px;font-weight:600}
   .search{padding:8px}
   .search input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0b141a;color:var(--wa-text)}
@@ -67,20 +69,13 @@
   .chatrow .right .ts{font-size:11px;color:var(--wa-muted)}
   .newchat{margin:8px;border:0;background:var(--wa-accent);color:#062a1f;font-weight:800;border-radius:10px;padding:10px 12px}
 
-  /* Selected chat highlight */
-  .chatrow.active{
-    background:#0f1a20;
-    border-left:3px solid var(--wa-accent);
-  }
+  .chatrow.active{background:#0f1a20;border-left:3px solid var(--wa-accent)}
   .chatrow.active .title{font-weight:900}
 
-  /* Mobile sidebar behavior: solid, full-bleed */
   @media (max-width: 860px){
     .app{grid-template-columns:1fr}
     .sidebar{display:none}
-    .sidebar.open{
-      display:block;position:fixed;z-index:30;inset:0;background:var(--wa-panel-2);
-    }
+    .sidebar.open{display:block;position:fixed;z-index:30;inset:0;background:var(--wa-panel-2)}
     .sidebar.open .sheet{max-width:100%;height:100%}
   }
 
@@ -88,7 +83,6 @@
   .main{display:flex;flex-direction:column;height:100vh}
   .head{
     display:flex;align-items:center;gap:10px;background:var(--wa-green);padding:10px 12px;border-left:1px solid #0003;
-    /* notch-safe */
     padding-top:calc(10px + constant(safe-area-inset-top));
     padding-top:calc(10px + env(safe-area-inset-top));
   }
@@ -101,8 +95,7 @@
   .statusicons{display:flex;gap:8px;align-items:center;color:#ccecdf;opacity:.85}
 
   .chat{
-    position:relative; /* for overlay */
-    flex:1;overflow:auto;
+    position:relative;flex:1;overflow:auto;
     background:
       url('data:image/svg+xml;utf8,\
       <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">\
@@ -115,10 +108,8 @@
       var(--wa-panel);
     padding:12px; display:flex; flex-direction:column; gap:8px
   }
-  /* subtle grain overlay */
   .chat::before{
-    content:""; position:absolute; inset:0; pointer-events:none;
-    opacity:.06;
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:.06;
     background:
       url('data:image/svg+xml;utf8,\
       <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">\
@@ -129,12 +120,8 @@
 
   .msg{max-width:min(78%,640px); display:flex; gap:10px; align-items:flex-end}
   .msg.you{margin-left:auto; flex-direction:row-reverse}
-  .bubble{
-    padding:12px 14px; border-radius:16px; line-height:1.4; background:var(--bubble-in); position:relative;
-    font-size:15.5px;
-  }
+  .bubble{padding:12px 14px; border-radius:16px; line-height:1.4; background:var(--bubble-in); position:relative; font-size:15.5px}
   .you .bubble{background:var(--bubble-out)}
-  /* bubble tails */
   .msg:not(.you) .bubble::after{
     content:""; position:absolute; left:-6px; bottom:0; width:0; height:0;
     border:6px solid transparent; border-right-color:var(--bubble-in); border-left:0; border-bottom:0;
@@ -145,19 +132,11 @@
   }
   .bubble img{max-width:100%; display:block; border-radius:10px; cursor:zoom-in}
 
-  /* Bigger chat avatars */
-  .avatar{
-    width:44px; height:44px;  /* was 36x36 */
-    border-radius:50%;object-fit:cover;border:1px solid #0006
-  }
+  .avatar{width:44px; height:44px; border-radius:50%;object-fit:cover;border:1px solid #0006}
 
   /* Date divider */
   .divider{display:flex;justify-content:center;margin:10px 0}
-  .divider .chip{
-    font-size:12px; color:var(--wa-muted);
-    background:#0f1a20; border:1px solid var(--line);
-    padding:6px 10px; border-radius:999px;
-  }
+  .divider .chip{font-size:12px; color:var(--wa-muted); background:#0f1a20; border:1px solid var(--line); padding:6px 10px; border-radius:999px}
 
   .ts{font-size:12px;color:var(--wa-muted);margin:0 6px}
   .metaRow{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-top:4px}
@@ -180,19 +159,6 @@
   .panel .small{font-size:12px;color:var(--wa-muted)}
 
   .hint{font-size:12px;color:var(--wa-muted);padding:10px}
-
-  /* Lightbox */
-  .lightbox{position:fixed;inset:0;background:#000c;display:none;align-items:center;justify-content:center;z-index:40}
-  .lightbox.open{display:flex}
-  .lightbox img{max-width:92vw;max-height:88vh;border-radius:12px}
-  .lightbox .cap{color:#eee;margin-top:8px;text-align:center}
-
-  /* Typing indicator */
-  .typing{display:flex;gap:6px;align-items:center;margin:6px 0}
-  .dots{display:inline-flex;gap:4px;padding:8px 12px;background:var(--bubble-in);border-radius:14px}
-  .dot{width:6px;height:6px;border-radius:50%;background:#cfd5d8;opacity:0.8;animation:b 1s infinite}
-  .dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
-  @keyframes b{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-3px)}}
 </style>
 </head>
 <body>
@@ -212,6 +178,9 @@
           <button id="newFolder">+ Folder</button>
           <button id="renameFolder">Rename</button>
           <button id="deleteFolder">Delete</button>
+          <button id="exportJSON">Backup JSON</button>
+          <button id="importJSON">Restore JSON</button>
+          <input id="restoreFile" type="file" accept="application/json" style="display:none">
         </div>
         <div class="search"><input id="search" placeholder="Search chats…"/></div>
         <div class="chatlist" id="chatlist"></div>
@@ -287,19 +256,25 @@
   /* ======= Config ======= */
   const TIME_12H = true; // Use 12-hour display for messages created in-app
 
-  /* ======= State & Storage (Folders -> Chats) ======= */
+  /* ======= State & Storage (Folders -> Chats) via IndexedDB ======= */
   const SKEY = 'cf_collections_v1';
-  let folders = load();
-  if(!folders.length){
-    folders = [{id:uid(), title:'My Stories', chats:[]}];
-    save();
-  }
-  let currentFolderId = folders[0].id;
-  let currentChatId = folders[0].chats[0]?.id || null;
+  let folders = [];
+  let currentFolderId = null;
+  let currentChatId = null;
 
+  // ID helpers
   function uid(){return Math.random().toString(36).slice(2,10)}
-  function load(){try{return JSON.parse(localStorage.getItem(SKEY)||'[]')}catch{return []}}
-  function save(){localStorage.setItem(SKEY, JSON.stringify(folders))}
+
+  // Save to IndexedDB
+  function save(){
+    idbKeyval.set(SKEY, folders).catch(err=>{
+      console.error(err);
+      alert('Storage error (maybe full or blocked). Try exporting a backup and removing some large images.');
+    });
+  }
+
+  // Migration helper: read localStorage once
+  function readLegacy(){ try { return JSON.parse(localStorage.getItem(SKEY)||'[]') } catch { return [] } }
 
   /* ======= Elements ======= */
   const $ = (id)=>document.getElementById(id);
@@ -325,6 +300,7 @@
   const mainName = $('mainName');
   const appendImport = $('appendImport');
   const typingBtn = $('typingBtn');
+  const restoreFile = $('restoreFile');
 
   const sidebar = document.getElementById('sidebar');
   $('openSidebar').onclick=()=>{sidebar.classList.add('open'); document.body.classList.add('noscroll')};
@@ -333,6 +309,11 @@
   $('search').oninput=(e)=>renderList(e.target.value.trim().toLowerCase());
   $('openImport').onclick=()=>{importPanel.classList.add('open')}
   $('exportBtn').onclick=()=>exportCurrent();
+
+  // Backup/Restore buttons
+  $('exportJSON').onclick = exportAllJSON;
+  $('importJSON').onclick = ()=> restoreFile.click();
+  restoreFile.onchange = handleRestoreJSON;
 
   $('newFolder').onclick=()=>{const t=prompt('New folder name','New Story'); if(t){folders.unshift({id:uid(), title:t, chats:[]}); save(); renderFolders();}};
   $('renameFolder').onclick=()=>{const f=getFolder(); if(!f) return; const t=prompt('Rename folder', f.title); if(t!==null){f.title=t||'Untitled'; save(); renderFolders();}};
@@ -366,7 +347,11 @@
     chatlist.innerHTML='';
     const f=getFolder(); if(!f) return;
     f.chats
-      .filter(c=>c.title.toLowerCase().includes(filter) || (c.messages.at(-1)?.text||'').toLowerCase().includes(filter))
+      .filter(c=>{
+        const last = c.messages[c.messages.length-1];
+        const lastText = last?.type==='text' ? (last.text||'') : last?.type==='image' ? '[image]' : '';
+        return c.title.toLowerCase().includes(filter) || (lastText||'').toLowerCase().includes(filter);
+      })
       .forEach(c=>{
         const row=document.createElement('div');
         row.className='chatrow' + (c.id===currentChatId ? ' active' : '');
@@ -376,8 +361,10 @@
         const img=document.createElement('img'); img.src=c.avatar||placeholderAvatar(c.title);
         const meta=document.createElement('div'); meta.className='meta';
         const title=document.createElement('div'); title.className='title'; title.textContent=c.title;
-        const last=document.createElement('div'); last.className='last'; last.textContent=c.messages[c.messages.length-1]?.text||'';
-        meta.append(title,last);
+        const last=c.messages[c.messages.length-1];
+        const lastText = last?.type==='text' ? (last.text||'') : last?.type==='image' ? '📷 Image' : '';
+        const lastDiv=document.createElement('div'); lastDiv.className='last'; lastDiv.textContent=lastText;
+        meta.append(title,lastDiv);
         const right=document.createElement('div'); right.className='right';
         const ts=document.createElement('div'); ts.className='ts';
         const lastMsg=c.messages[c.messages.length-1];
@@ -412,7 +399,6 @@
   }
 
   function renderMsg(m, chat){
-    /* ===== Date divider ===== */
     if(m.type==='divider'){
       const d=document.createElement('div'); d.className='divider';
       const chip=document.createElement('div'); chip.className='chip'; chip.textContent = m.label || '';
@@ -456,7 +442,7 @@
   send.onclick = ()=>{
     const c=getChat(); if(!c){alert('Create or select a chat first.'); return}
     const name=(who.value||'You').trim(); const t=text.value.trim(); if(!t){return}
-    const tm=(timeIn.value|| nowTime()); // generate 12h time when blank
+    const tm=(timeIn.value|| nowTime());
     const my=(meName.value||'You').trim();
     const msg={id:uid(),type:'text',who:name,displayWho: name===my? my : name, text:t, time:tm};
     if(name===my) { msg.side='you'; msg.status='sent'; }
@@ -471,7 +457,7 @@
     const file=e.target.files[0]; if(!file){return}
     const c=getChat(); if(!c){alert('Create or select a chat first.'); return}
     const name=(who.value||'You').trim(); const my=(meName.value||'You').trim();
-    const data=await fileToDataURL(file);
+    const data=await compressImageToDataURL(file, 1600, 0.82);
     const tm=(timeIn.value|| nowTime());
     const msg={id:uid(),type:'image',who:name,displayWho: name===my? my : name,src:data,time:tm};
     if(name===my) { msg.side='you'; msg.status='sent'; }
@@ -484,15 +470,15 @@
   avatarInput.onchange = async (e)=>{
     const file=e.target.files[0]; if(!file){return}
     const c=getChat(); if(!c){alert('Create or select a chat first.'); return}
-    c.avatar=await fileToDataURL(file); save(); renderChat(); e.target.value='';
+    c.avatar=await compressImageToDataURL(file, 640, 0.8); save(); renderChat(); e.target.value='';
   }
 
-  /* Per-member avatar: applies to the name in the "Name" field */
+  // Per-member avatar: applies to the name in the "Name" field
   memberAvatarInput.onchange = async (e)=>{
     const file=e.target.files[0]; if(!file){return}
     const c=getChat(); if(!c){alert('Create or select a chat first.'); e.target.value=''; return}
     const name=(who.value||'').trim(); if(!name){alert('Set the Name field to who you want to assign an avatar to.'); e.target.value=''; return}
-    const data=await fileToDataURL(file);
+    const data=await compressImageToDataURL(file, 640, 0.8);
     const my=(meName.value||'You').trim();
     if(name===my){
       c.avatar=data;
@@ -520,7 +506,6 @@
   };
 
   function prettyDateLabel(d){
-    // e.g., "Today" if today; else "Mon, Mar 4, 2025"
     const now = new Date();
     const isSameDay = d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth() && d.getDate()===now.getDate();
     if(isSameDay) return 'Today';
@@ -528,9 +513,7 @@
     return d.toLocaleDateString(undefined, opts);
   }
 
-  function fileToDataURL(file){return new Promise(res=>{const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(file)})}
-
-  /* ======= Import panel & parser (append into current chat by default) ======= */
+  /* ======= Import panel & parser ======= */
   $('cancelImport').onclick=()=>{importPanel.classList.remove('open')}
   $('parse').onclick=()=>{
     const t=scriptBox.value.replace(/\r/g,''); if(!t.trim()){alert('Paste a script first.'); return}
@@ -571,7 +554,7 @@
 
   function mapName(name, me, main){ return name===main ? me : name }
 
-  /* ======= Export ======= */
+  /* ======= Export current chat as single-file HTML ======= */
   function exportCurrent(){
     const c=getChat(); if(!c){alert('Open a chat first.'); return}
     const html = buildExportHTML(c);
@@ -594,8 +577,8 @@
       const ticks = you && m.status ? `<span class="ticks" data-status="${m.status}"></span>` : '';
       return `<div class="msg${you?' you':''}"><div class="bubble">${safe(m.text)}</div><div class="metaRow"><span class="ts">${safe(ts)}</span>${ticks}</div></div>`
     }).join('');
-    return `<!doctype html><html><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/>`+
-    `<title>${safe(c.title||'Chat')}</title><style>
+    return `<!doctype html><html><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/>
+    <title>${safe(c.title||'Chat')}</title><style>
       :root{--bubble-in:#202c33;--bubble-out:#005c4b;--wa-bg:#0b141a;--wa-panel:#111b21;--wa-text:#e9edef;--wa-muted:#8696a0;--read:#34b7f1;--line:#1f2c33}
       body{margin:0;background:#111b21;color:var(--wa-text);font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Helvetica,Arial,sans-serif}
       .wrap{max-width:760px;margin:0 auto;padding:16px;background:var(--wa-bg);min-height:100vh}
@@ -668,10 +651,84 @@
     [...chatView.querySelectorAll('.ticks')].at(-1)?.setAttribute('data-status', status);
   }
 
-  /* ======= Init ======= */
-  function init(){
+  /* ======= Image compression (canvas) ======= */
+  async function compressImageToDataURL(file, maxEdge=1280, quality=0.82){
+    // If tiny already, keep original DataURL
+    if(file.size <= 200*1024){
+      return new Promise((res,reject)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=reject; fr.readAsDataURL(file); });
+    }
+    const url = URL.createObjectURL(file);
+    const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=url; });
+    const scale = Math.min(1, maxEdge/Math.max(img.width, img.height));
+    const w = Math.round(img.width*scale), h = Math.round(img.height*scale);
+    const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img,0,0,w,h);
+    const out = canvas.toDataURL('image/jpeg', quality);
+    URL.revokeObjectURL(url);
+    return out;
+  }
+
+  /* ======= Backup / Restore JSON ======= */
+  function exportAllJSON(){
+    const data = JSON.stringify(folders, null, 2);
+    const blob = new Blob([data], {type:'application/json'});
+    const ts = new Date();
+    const stamp = ts.toISOString().replace(/[:.]/g,'-').slice(0,19);
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download = `chat_fiction_backup_${stamp}.json`;
+    a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+  }
+
+  async function handleRestoreJSON(e){
+    const file = e.target.files[0];
+    e.target.value='';
+    if(!file) return;
+    try{
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if(!Array.isArray(data)) throw new Error('Invalid format (expected array).');
+      if(!confirm('Replace ALL current folders/chats with this backup?')) return;
+      folders = data;
+      // Reset selection
+      currentFolderId = folders[0]?.id || null;
+      currentChatId = folders[0]?.chats?.[0]?.id || null;
+      save(); renderFolders(); renderList(); renderChat();
+      alert('Backup restored.');
+    }catch(err){
+      console.error(err);
+      alert('Could not restore backup: ' + err.message);
+    }
+  }
+
+  /* ======= Init (async: migrate localStorage -> IndexedDB) ======= */
+  async function init(){
+    try{
+      const existing = await idbKeyval.get(SKEY) || [];
+      const legacy = readLegacy();
+      if((!existing || existing.length===0) && legacy && legacy.length){
+        folders = legacy;
+        await idbKeyval.set(SKEY, folders);
+        // Optionally clear localStorage once you're confident:
+        // localStorage.removeItem(SKEY);
+      } else if(existing && existing.length){
+        folders = existing;
+      } else {
+        folders = [{id:uid(), title:'My Stories', chats:[]}];
+        await idbKeyval.set(SKEY, folders);
+      }
+    }catch(err){
+      console.error('Init storage error:', err);
+      // Fallback to memory with legacy if possible
+      folders = readLegacy();
+      if(!folders.length) folders = [{id:uid(), title:'My Stories', chats:[]}];
+    }
+
+    currentFolderId = folders[0]?.id || null;
+    currentChatId = folders[0]?.chats?.[0]?.id || null;
+
     renderFolders();
-    if(!getFolder().chats.length){ addChat('Demo chat'); }
+    if(!getFolder()?.chats?.length){ addChat('Demo chat'); }
     meName.value = 'You';
     who.value = 'You';
     renderList(); renderChat();
@@ -688,6 +745,9 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+
+</body>
+</html>
 
 </body>
 </html>
