@@ -1,7 +1,6 @@
-// bump this string when you change cached files
-const CACHE = "chatfic-v1";
+// give your cache a version stamp
+const CACHE = "chatfic-" + (self.registration.scope || "v") + "-v2";
 
-// keep paths relative so it works on GitHub Pages project URLs
 const ASSETS = [
   "./",
   "./index.html",
@@ -11,21 +10,38 @@ const ASSETS = [
   "./icons/maskable-512.png"
 ];
 
-self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
+// install: pre-cache core assets
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE).then((cache) => cache.addAll(ASSETS))
+  );
+  self.skipWaiting(); // activate immediately
 });
 
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
+// activate: clear old caches
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.map((k) => (k === CACHE ? null : caches.delete(k))))
+      Promise.all(
+        keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))
+      )
     )
   );
+  self.clients.claim();
 });
 
-self.addEventListener("fetch", (e) => {
-  const url = new URL(e.request.url);
-  if (url.origin === location.origin) {
-    e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
-  }
+// fetch: network-first, fallback to cache
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // update cache in background
+        const copy = response.clone();
+        caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
+  );
 });
